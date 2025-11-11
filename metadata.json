@@ -1,0 +1,5 @@
+{
+  "name": "ShopLedger",
+  "description": "A simple yet smart sales recording app for shop owners to track daily income and sales performance. All data is stored locally in your browser.",
+  "requestFramePermissions": []
+}
