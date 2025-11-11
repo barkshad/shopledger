@@ -1,24 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShopLedger</title>
+    <title>ShopLedger – Simple Sales Recorder</title>
+    <meta name="description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance. All data is stored locally in your browser." />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ShopLedger – Simple Sales Recorder" />
+    <meta property="og:description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance." />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="ShopLedger – Simple Sales Recorder" />
+    <meta property="twitter:description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance." />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              primary: '#3B82F6',
-              secondary: '#10B981',
-              background: '#F3F4F6',
-              surface: '#FFFFFF',
-              'on-surface': '#1F2937',
+              primary: '#3B82F6', // A nice blue
+              secondary: '#10B981', // Kept for consistency, maybe use an accent color
+              background: '#F8FAFC', // Lighter background - almost white
+              surface: '#FFFFFF', // White for cards and surfaces
+              'on-surface': '#334155', // Slate-700, a blue-gray for text
               'on-primary': '#FFFFFF',
+              'subtle-text': '#64748B', // Slate-500 for less important text
+              'border-color': '#E2E8F0', // Slate-200 for borders
             },
+            boxShadow: {
+              'subtle': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
+            }
           },
         },
       }
@@ -31,12 +47,13 @@
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "idb": "https://aistudiocdn.com/idb@^8.0.3"
+    "idb": "https://aistudiocdn.com/idb@^8.0.3",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.2.12"
   }
 }
 </script>
 </head>
-  <body class="bg-background">
+  <body class="bg-background text-on-surface">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

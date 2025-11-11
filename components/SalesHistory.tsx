@@ -1,8 +1,9 @@
-
 import React, { useState, useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Sale } from '../types';
 import { EditIcon, TrashIcon, SaveIcon, CancelIcon } from './icons';
+import Spinner from './Spinner';
+import ConfirmationDialog from './ConfirmationDialog';
 
 interface EditState extends Omit<Sale, 'id' | 'total'> {
     id: number;
@@ -12,6 +13,9 @@ const SalesHistory = () => {
   const { sales, loading, updateSale, deleteSale } = useSales();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingSale, setEditingSale] = useState<EditState | null>(null);
+  
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<number | null>(null);
 
   const filteredSales = useMemo(() => {
     return sales.filter(sale =>
@@ -51,9 +55,15 @@ const SalesHistory = () => {
     }
   };
   
-  const handleDeleteSale = async (id: number) => {
-    if(window.confirm('Are you sure you want to delete this sale record?')) {
-        await deleteSale(id);
+  const handleDeleteClick = (id: number) => {
+      setSaleToDelete(id);
+      setDialogOpen(true);
+  }
+
+  const confirmDelete = async () => {
+    if(saleToDelete !== null) {
+        await deleteSale(saleToDelete);
+        setSaleToDelete(null);
     }
   }
 
@@ -67,63 +77,72 @@ const SalesHistory = () => {
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   if (loading) {
-    return <div className="text-center p-10">Loading sales history...</div>;
+    return <Spinner />;
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Sales History</h1>
+    <>
+    <ConfirmationDialog
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Sale"
+        message="Are you sure you want to delete this sale record? This action cannot be undone."
+        confirmText="Delete"
+    />
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Sales History</h1>
       <div className="mb-4">
         <input
           type="text"
           placeholder="Search by item name or date (YYYY-MM-DD)..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 bg-surface border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+          className="w-full px-4 py-2 bg-surface border border-border-color rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
       </div>
-      <div className="bg-surface rounded-xl shadow-md overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-subtle border border-border-color overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border-color">
+            <thead className="bg-background">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Item</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Quantity</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Price</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Total</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Date</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-surface divide-y divide-border-color">
               {filteredSales.map((sale) => (
                 editingSale && editingSale.id === sale.id ? (
                     // Edit mode row
-                    <tr key={sale.id}>
-                        <td className="px-6 py-4 whitespace-nowrap"><input type="text" name="itemName" value={editingSale.itemName} onChange={handleEditChange} className="w-full p-1 border rounded"/></td>
-                        <td className="px-6 py-4 whitespace-nowrap"><input type="number" name="quantity" value={editingSale.quantity} onChange={handleEditChange} className="w-20 p-1 border rounded"/></td>
-                        <td className="px-6 py-4 whitespace-nowrap"><input type="number" name="price" value={editingSale.price} onChange={handleEditChange} className="w-24 p-1 border rounded"/></td>
-                        <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(editingSale.quantity * editingSale.price)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap"><input type="date" name="date" value={editingSale.date} onChange={handleEditChange} className="w-full p-1 border rounded"/></td>
+                    <tr key={sale.id} className="bg-primary/5">
+                        <td className="px-6 py-4 whitespace-nowrap"><input type="text" name="itemName" value={editingSale.itemName} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><input type="number" name="quantity" value={editingSale.quantity} onChange={handleEditChange} className="w-20 p-1 border rounded bg-surface border-primary/50"/></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><input type="number" name="price" value={editingSale.price} onChange={handleEditChange} className="w-24 p-1 border rounded bg-surface border-primary/50"/></td>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium">{formatCurrency(editingSale.quantity * editingSale.price)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap"><input type="date" name="date" value={editingSale.date} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
-                                <button onClick={handleUpdateSale} className="text-green-600 hover:text-green-900"><SaveIcon className="h-5 w-5"/></button>
-                                <button onClick={handleCancelEdit} className="text-gray-600 hover:text-gray-900"><CancelIcon className="h-5 w-5"/></button>
+                                <button onClick={handleUpdateSale} className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100"><SaveIcon className="h-5 w-5"/></button>
+                                <button onClick={handleCancelEdit} className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200"><CancelIcon className="h-5 w-5"/></button>
                             </div>
                         </td>
                     </tr>
                 ) : (
                     // View mode row
-                    <tr key={sale.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sale.itemName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sale.quantity}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(sale.price)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(sale.total)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(sale.date)}</td>
+                    <tr key={sale.id} className="hover:bg-background transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-on-surface">{sale.itemName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{sale.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatCurrency(sale.price)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text font-semibold">{formatCurrency(sale.total)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatDate(sale.date)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center space-x-4">
-                                <button onClick={() => handleEditClick(sale)} className="text-primary hover:text-blue-700"><EditIcon className="h-5 w-5"/></button>
-                                <button onClick={() => handleDeleteSale(sale.id!)} className="text-red-600 hover:text-red-900"><TrashIcon className="h-5 w-5"/></button>
+                            <div className="flex items-center space-x-2">
+                                <button onClick={() => handleEditClick(sale)} className="text-primary hover:text-blue-700 p-2 rounded-full hover:bg-primary/10"><EditIcon className="h-5 w-5"/></button>
+                                <button onClick={() => handleDeleteClick(sale.id!)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100"><TrashIcon className="h-5 w-5"/></button>
                             </div>
                         </td>
                     </tr>
@@ -132,13 +151,14 @@ const SalesHistory = () => {
             </tbody>
           </table>
           {filteredSales.length === 0 && (
-            <div className="text-center p-10 text-gray-500">
+            <div className="text-center p-10 text-subtle-text">
                 {sales.length === 0 ? "You haven't recorded any sales yet." : "No sales match your search."}
             </div>
           )}
         </div>
       </div>
     </div>
+    </>
   );
 };
 

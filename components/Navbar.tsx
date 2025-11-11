@@ -1,16 +1,17 @@
-
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DashboardIcon, PlusCircleIcon, HistoryIcon, AdminIcon } from './icons';
 
-const NavItem: React.FC<{ to: string; children: React.ReactNode; }> = ({ to, children }) => (
+const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
         to={to}
+        onClick={onClick}
         className={({ isActive }) =>
-            `flex flex-col sm:flex-row items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                 isActive
                     ? 'bg-primary text-on-primary'
-                    : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                    : 'text-subtle-text hover:bg-primary/10 hover:text-primary'
             }`
         }
     >
@@ -20,9 +21,10 @@ const NavItem: React.FC<{ to: string; children: React.ReactNode; }> = ({ to, chi
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const closeMenu = () => setIsOpen(false);
 
     return (
-        <nav className="bg-surface shadow-md">
+        <header className="bg-surface/80 backdrop-blur-sm sticky top-0 z-40 border-b border-border-color">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex-shrink-0">
@@ -30,21 +32,19 @@ const Navbar = () => {
                             ShopLedger
                         </NavLink>
                     </div>
-                    <div className="hidden md:block">
-                        <div className="ml-10 flex items-baseline space-x-4">
-                            <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
-                            <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
-                            <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
-                            <NavItem to="/admin"><AdminIcon className="h-5 w-5"/><span>Admin</span></NavItem>
-                        </div>
-                    </div>
+                    <nav className="hidden md:flex items-center space-x-2">
+                        <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
+                        <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
+                        <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
+                        <NavItem to="/admin"><AdminIcon className="h-5 w-5"/><span>Admin</span></NavItem>
+                    </nav>
                     <div className="-mr-2 flex md:hidden">
                         <button
                             onClick={() => setIsOpen(!isOpen)}
                             type="button"
-                            className="bg-gray-200 inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-white"
+                            className="inline-flex items-center justify-center p-2 rounded-md text-subtle-text hover:text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
                             aria-controls="mobile-menu"
-                            aria-expanded="false"
+                            aria-expanded={isOpen}
                         >
                             <span className="sr-only">Open main menu</span>
                             {!isOpen ? (
@@ -61,17 +61,25 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {isOpen && (
-                <div className="md:hidden" id="mobile-menu">
-                    <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                        <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
-                        <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
-                        <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
-                        <NavItem to="/admin"><AdminIcon className="h-5 w-5"/><span>Admin</span></NavItem>
-                    </div>
-                </div>
-            )}
-        </nav>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="md:hidden"
+                        id="mobile-menu"
+                    >
+                        <nav className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                            <NavItem to="/" onClick={closeMenu}><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
+                            <NavItem to="/add-sale" onClick={closeMenu}><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
+                            <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
+                            <NavItem to="/admin" onClick={closeMenu}><AdminIcon className="h-5 w-5"/><span>Admin</span></NavItem>
+                        </nav>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </header>
     );
 };
 
