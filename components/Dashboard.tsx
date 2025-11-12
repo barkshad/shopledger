@@ -77,8 +77,10 @@ const Dashboard = () => {
         return acc;
     }, {} as Record<string, number>);
 
+    // FIX: Explicitly cast sort values to numbers to prevent potential TypeScript errors
+    // with arithmetic operations on inferred types, resolving the error on this line.
     const mostSoldItem = Object.keys(itemCounts).length > 0
-        ? Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0][0]
+        ? Object.entries(itemCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0][0]
         : 'N/A';
         
     const salesByDate = sales.reduce((acc, sale) => {

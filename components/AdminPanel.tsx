@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSales } from '../hooks/useSales';
 import { convertToCSV, downloadCSV } from '../utils/csvUtils';
 import ConfirmationDialog from './ConfirmationDialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ADMIN_SECRET_KEY = '12345';
 
@@ -11,6 +12,19 @@ const AdminPanel = () => {
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const { sales, clearAllSales } = useSales();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  const openModal = (photoUrl: string) => {
+    setSelectedPhoto(photoUrl);
+    setIsModalOpen(true);
+  };
+  
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedPhoto(null);
+  };
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +46,7 @@ const AdminPanel = () => {
   }
 
   const handleDownloadCSV = () => {
-    const csvData = convertToCSV(sales);
+    const csvData = convertToCSV(sales.map(({photo, ...rest}) => rest)); // Exclude photos from CSV
     downloadCSV(csvData, 'shopledger_sales_data.csv');
   };
 
@@ -83,6 +97,8 @@ const AdminPanel = () => {
       </div>
     );
   }
+  
+  const salesWithPhotos = sales.filter(s => !!s.photo);
 
   return (
     <>
@@ -94,7 +110,28 @@ const AdminPanel = () => {
         message="Are you absolutely sure you want to delete ALL sales data? This action is permanent and cannot be undone."
         confirmText="Yes, delete everything"
       />
-      <div className="max-w-2xl mx-auto">
+      <AnimatePresence>
+        {isModalOpen && selectedPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+            onClick={closeModal}
+          >
+            <motion.img
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              src={selectedPhoto}
+              alt="Full size product"
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
         <div className="bg-surface p-8 rounded-xl shadow-subtle border border-border-color space-y-8">
           <div>
@@ -116,6 +153,28 @@ const AdminPanel = () => {
             </div>
           </div>
           
+          <div className="border-t border-border-color pt-6">
+            <h2 className="text-xl font-semibold">Product Photo Gallery</h2>
+            <p className="text-subtle-text mb-4">A gallery of all products with photos. Click a photo to enlarge.</p>
+            {salesWithPhotos.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {salesWithPhotos.map(sale => (
+                  <div key={sale.id} className="group relative border border-border-color rounded-lg overflow-hidden cursor-pointer" onClick={() => sale.photo && openModal(sale.photo)}>
+                    <img src={sale.photo} alt={sale.itemName} className="aspect-square w-full object-cover transition-transform group-hover:scale-105"/>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white p-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <p className="font-bold truncate">{sale.itemName}</p>
+                      <p>{new Date(sale.date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 bg-background rounded-lg">
+                <p className="text-subtle-text">No sales with photos have been recorded yet.</p>
+              </div>
+            )}
+          </div>
+
           <div className="border-t border-border-color pt-6">
             <h2 className="text-xl font-semibold text-red-600">Danger Zone</h2>
             <p className="text-subtle-text mb-4">This action is irreversible. Please proceed with caution.</p>

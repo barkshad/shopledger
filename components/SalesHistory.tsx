@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Sale } from '../types';
@@ -7,9 +6,11 @@ import Spinner from './Spinner';
 import ConfirmationDialog from './ConfirmationDialog';
 import { convertToCSV, downloadCSV } from '../utils/csvUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface EditState extends Omit<Sale, 'id' | 'total'> {
     id: number;
+    photo?: string;
 }
 
 const SummaryStatCard: React.FC<{ title: string; value: string; }> = ({ title, value }) => (
@@ -32,9 +33,23 @@ const SalesHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [showWithPhotosOnly, setShowWithPhotosOnly] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKey, direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  const openPhotoModal = (photoUrl: string) => {
+    setSelectedPhoto(photoUrl);
+    setIsPhotoModalOpen(true);
+  };
+
+  const closePhotoModal = () => {
+    setIsPhotoModalOpen(false);
+    setSelectedPhoto(null);
+  };
 
   const filteredAndSortedSales = useMemo(() => {
     let filtered = sales.filter(sale => {
@@ -47,8 +62,9 @@ const SalesHistory = () => {
 
         const matchesSearch = sale.itemName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDate = (!start || saleDate >= start) && (!end || saleDate <= end);
+        const matchesPhotoFilter = !showWithPhotosOnly || (showWithPhotosOnly && !!sale.photo);
         
-        return matchesSearch && matchesDate;
+        return matchesSearch && matchesDate && matchesPhotoFilter;
     });
 
     if (sortConfig.key) {
@@ -68,7 +84,7 @@ const SalesHistory = () => {
     }
 
     return filtered;
-  }, [sales, searchTerm, startDate, endDate, sortConfig]);
+  }, [sales, searchTerm, startDate, endDate, sortConfig, showWithPhotosOnly]);
 
   const summaryStats = useMemo(() => {
     const totalSalesCount = filteredAndSortedSales.length;
@@ -77,15 +93,15 @@ const SalesHistory = () => {
     const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.total, 0);
     const avgSale = totalRevenue / totalSalesCount;
 
-    // FIX: Explicitly type the accumulator in the `reduce` function to ensure correct type inference for `itemCounts`.
     const itemCounts = filteredAndSortedSales.reduce((acc: Record<string, number>, s) => {
         acc[s.itemName] = (acc[s.itemName] || 0) + s.quantity;
         return acc;
     }, {} as Record<string, number>);
 
-    // FIX: The destructuring in the sort callback was causing a type error. Using direct array access to ensure correct type inference.
+    // FIX: Explicitly cast sort values to numbers to prevent potential TypeScript errors
+    // with arithmetic operations on inferred types, resolving the error on this line.
     const mostSoldItem = Object.keys(itemCounts).length > 0
-        ? Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0][0]
+        ? Object.entries(itemCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0][0]
         : 'N/A';
     
     return { totalSales: totalSalesCount, totalRevenue, avgSale, mostSoldItem };
@@ -131,7 +147,7 @@ const SalesHistory = () => {
   
   const handleUpdateSale = async () => {
     if (!editingSale) return;
-    const { id, itemName, quantity, price, date } = editingSale;
+    const { id, itemName, quantity, price, date, photo } = editingSale;
     await updateSale({
       id,
       itemName,
@@ -139,6 +155,7 @@ const SalesHistory = () => {
       price: +price,
       total: +quantity * +price,
       date: new Date(date).toISOString(),
+      photo: photo,
     });
     setEditingSale(null);
   };
@@ -158,10 +175,28 @@ const SalesHistory = () => {
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (editingSale) setEditingSale({ ...editingSale, [e.target.name]: e.target.value });
   };
+  
+  const handleEditPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingSale) return;
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditingSale({ ...editingSale, photo: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeEditPhoto = () => {
+    if (editingSale) {
+      setEditingSale({ ...editingSale, photo: undefined });
+    }
+  };
 
   const handleDownloadReport = () => {
     setIsExporting(true);
-    const csvData = convertToCSV(filteredAndSortedSales);
+    const csvData = convertToCSV(filteredAndSortedSales.map(({photo, ...rest}) => rest));
     downloadCSV(csvData, `sales_report_${new Date().toISOString().split('T')[0]}.csv`);
     setTimeout(() => setIsExporting(false), 1000);
   };
@@ -192,6 +227,27 @@ const SalesHistory = () => {
         message="Are you sure you want to delete this sale record? This action cannot be undone."
         confirmText="Delete"
     />
+    <AnimatePresence>
+      {isPhotoModalOpen && selectedPhoto && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+          onClick={closePhotoModal}
+        >
+          <motion.img
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.8 }}
+            src={selectedPhoto}
+            alt="Full size product"
+            className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Sales History & Analysis</h1>
 
@@ -202,35 +258,39 @@ const SalesHistory = () => {
           <SummaryStatCard title="Most Sold Item" value={summaryStats.mostSoldItem} />
       </div>
 
-      <div className="bg-surface p-4 rounded-xl shadow-subtle border border-border-color flex flex-col md:flex-row gap-4 items-center">
+      <div className="bg-surface p-4 rounded-xl shadow-subtle border border-border-color flex flex-col md:flex-row gap-4 items-center flex-wrap">
           <input
             type="text"
             placeholder="Search by item name..."
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full md:w-1/3 px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full md:w-auto md:flex-1 px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
           <div className="flex items-center gap-2 w-full md:w-auto">
               <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
               <span className="text-subtle-text">-</span>
               <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
           </div>
+          <div className="flex items-center">
+              <input id="photo-filter" type="checkbox" checked={showWithPhotosOnly} onChange={(e) => { setShowWithPhotosOnly(e.target.checked); setCurrentPage(1); }} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"/>
+              <label htmlFor="photo-filter" className="ml-2 block text-sm text-on-surface">Photos only</label>
+          </div>
           <button
             onClick={handleDownloadReport}
             disabled={isExporting}
-            className="w-full md:w-auto ml-auto bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
+            className="w-full md:w-auto bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
           >
               {isExporting ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <DownloadIcon className="h-5 w-5" />}
-              {isExporting ? 'Exporting...' : 'Download Report'}
+              {isExporting ? 'Exporting...' : 'Export'}
           </button>
       </div>
 
       <div className="bg-surface rounded-xl shadow-subtle border border-border-color overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border-color">
-            <thead className="bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+            <thead className="bg-background/80">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Product</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Photo</th>
                 <SortableHeader columnKey="itemName" title="Item"/>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Qty</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Price</th>
@@ -243,7 +303,16 @@ const SalesHistory = () => {
               {paginatedSales.map((sale) => (
                 editingSale?.id === sale.id ? (
                     <tr key={sale.id} className="bg-primary/5">
-                        <td className="px-6 py-4 whitespace-nowrap"><PackageIcon className="h-6 w-6 text-subtle-text"/></td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                                {editingSale.photo ? <img src={editingSale.photo} alt="preview" className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-background flex items-center justify-center"><PackageIcon className="h-6 w-6 text-subtle-text"/></div>}
+                                <div>
+                                    <input type="file" id={`edit-photo-${sale.id}`} className="hidden" onChange={handleEditPhotoChange} accept="image/*" />
+                                    <label htmlFor={`edit-photo-${sale.id}`} className="text-xs text-primary hover:underline cursor-pointer">Change</label>
+                                    {editingSale.photo && <button onClick={removeEditPhoto} className="text-xs text-red-500 hover:underline ml-2">Remove</button>}
+                                </div>
+                            </div>
+                        </td>
                         <td className="px-6 py-4"><input type="text" name="itemName" value={editingSale.itemName} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
                         <td className="px-6 py-4"><input type="number" name="quantity" value={editingSale.quantity} onChange={handleEditChange} className="w-20 p-1 border rounded bg-surface border-primary/50"/></td>
                         <td className="px-6 py-4"><input type="number" name="price" value={editingSale.price} onChange={handleEditChange} className="w-24 p-1 border rounded bg-surface border-primary/50"/></td>
@@ -258,14 +327,10 @@ const SalesHistory = () => {
                     </tr>
                 ) : (
                     <tr key={sale.id} className="even:bg-background/50 hover:bg-primary/5 transition-colors group">
-                        <td className="px-6 py-4 whitespace-nowrap"><PackageIcon className="h-6 w-6 text-subtle-text"/></td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-on-surface relative">
-                            {sale.itemName}
-                            <div className="absolute hidden group-hover:block bg-slate-800 text-white text-xs rounded py-1 px-2 z-20 -top-8 left-0 shadow-lg whitespace-nowrap">
-                                <p><strong>Total:</strong> {formatCurrency(sale.total)}</p>
-                                <p><strong>Date:</strong> {formatDate(sale.date)}</p>
-                            </div>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            {sale.photo ? <img src={sale.photo} alt={sale.itemName} className="h-10 w-10 rounded-md object-cover cursor-pointer hover:scale-110 transition-transform" onClick={() => sale.photo && openPhotoModal(sale.photo)} /> : <div className="h-10 w-10 rounded-md bg-background flex items-center justify-center"><PackageIcon className="h-6 w-6 text-subtle-text"/></div>}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-on-surface">{sale.itemName}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{sale.quantity}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatCurrency(sale.price)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text font-semibold">{formatCurrency(sale.total)}</td>
@@ -273,7 +338,7 @@ const SalesHistory = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
                                 <button onClick={() => handleEditClick(sale)} className="text-primary hover:text-blue-700 p-2 rounded-full hover:bg-primary/10"><EditIcon className="h-5 w-5"/></button>
-                                <button onClick={() => handleDeleteClick(sale.id!)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100"><TrashIcon className="h-5 w-5"/></button>
+                                <button onClick={() => sale.id && handleDeleteClick(sale.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100"><TrashIcon className="h-5 w-5"/></button>
                             </div>
                         </td>
                     </tr>

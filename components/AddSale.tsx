@@ -7,6 +7,8 @@ const AddSale = () => {
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,6 +16,24 @@ const AddSale = () => {
   useEffect(() => {
     setTotal(quantity * price);
   }, [quantity, price]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPhotoPreview(result);
+        setPhoto(result); // Store the full data URL
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhoto(null);
+    setPhotoPreview(null);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +49,15 @@ const AddSale = () => {
             quantity,
             price,
             date: new Date(date).toISOString(),
+            photo: photo || undefined,
         };
         await addSale(saleData);
 
-        setSuccessMessage('Sale recorded successfully!');
+        setSuccessMessage(photo ? 'Photo saved with sale successfully!' : 'Sale recorded successfully!');
         setItemName('');
         setQuantity(1);
         setPrice(0);
+        removePhoto();
         // Do not reset date, user might want to add multiple sales for the same day
         
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -100,6 +122,30 @@ const AddSale = () => {
                 />
             </div>
           </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-on-surface">Product Photo</label>
+            <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border-color px-6 py-10">
+                <div className="text-center">
+                    {photoPreview ? (
+                        <img src={photoPreview} alt="Product Preview" className="mx-auto h-24 w-24 object-cover rounded-md" />
+                    ) : (
+                        <svg className="mx-auto h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12A2.25 2.25 0 0120.25 20.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                        </svg>
+                    )}
+                    <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                        <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-blue-500">
+                            <span>{photoPreview ? 'Change photo' : 'Take or upload photo'}</span>
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" capture="camera" onChange={handlePhotoChange}/>
+                        </label>
+                    </div>
+                    <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF</p>
+                    {photoPreview && <button type="button" onClick={removePhoto} className="mt-2 text-xs text-red-500 hover:underline">Remove photo</button>}
+                </div>
+            </div>
+          </div>
+
           <div>
             <label htmlFor="date" className="block text-sm font-medium text-on-surface">Date of Sale</label>
             <input
