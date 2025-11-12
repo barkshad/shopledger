@@ -82,9 +82,9 @@ const SalesHistory = () => {
         return acc;
     }, {} as Record<string, number>);
 
-    // FIX: Destructure array arguments in sort to fix type inference issue.
+    // FIX: The destructuring in the sort callback was causing a type error. Using direct array access to ensure correct type inference.
     const mostSoldItem = Object.keys(itemCounts).length > 0
-        ? Object.entries(itemCounts).sort(([, a], [, b]) => b - a)[0][0]
+        ? Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0][0]
         : 'N/A';
     
     return { totalSales: totalSalesCount, totalRevenue, avgSale, mostSoldItem };
