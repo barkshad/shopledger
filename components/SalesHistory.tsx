@@ -77,7 +77,8 @@ const SalesHistory = () => {
     const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.total, 0);
     const avgSale = totalRevenue / totalSalesCount;
 
-    const itemCounts = filteredAndSortedSales.reduce((acc, s) => {
+    // FIX: Explicitly type the accumulator in the `reduce` function to ensure correct type inference for `itemCounts`.
+    const itemCounts = filteredAndSortedSales.reduce((acc: Record<string, number>, s) => {
         acc[s.itemName] = (acc[s.itemName] || 0) + s.quantity;
         return acc;
     }, {} as Record<string, number>);
