@@ -45,7 +45,7 @@ const ReportsTab: React.FC<{ logAction: (message: string) => void }> = ({ logAct
             acc[s.itemName] = (acc[s.itemName] || 0) + s.quantity;
             return acc;
         }, {} as Record<string, number>);
-        // FIX: Explicitly cast sort values to numbers to prevent arithmetic operation errors.
+        
         const mostSoldItem = Object.keys(itemCounts).length > 0
             ? Object.entries(itemCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0][0]
             : 'N/A';

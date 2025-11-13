@@ -20,9 +20,11 @@ const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ lo
             const usageMB = ((estimate.usage || 0) / (1024 * 1024)).toFixed(2);
             setStorageUsage(`${usageMB} MB`);
         } else {
-            setStorageUsage('Not available');
+            const usageBytes = JSON.stringify(sales).length;
+            const usageMB = (usageBytes / (1024 * 1024)).toFixed(2);
+            setStorageUsage(`~${usageMB} MB`);
         }
-    }, []);
+    }, [sales]);
 
     useEffect(() => {
         calculateStorage();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import { useSales } from '../hooks/useSales';
 import StatCard from './StatCard';
@@ -15,7 +15,8 @@ import {
     TrendingUpIcon,
     AwardIcon,
     BarChartIcon,
-    SunIcon
+    SunIcon,
+    ShoppingCartIcon
 } from './icons';
 
 const containerVariants = {
@@ -46,9 +47,9 @@ const Dashboard = () => {
     totalRevenue,
     mostSoldItem,
     recentSales,
-    dailyAverage,
-    highestSaleOfWeek,
-    totalItemsSold,
+    avgSaleValue,
+    totalUniqueItems,
+    busiestDay,
     chartData
   } = useMemo(() => {
     const now = new Date();
@@ -60,9 +61,10 @@ const Dashboard = () => {
     const todaySales = sales
       .filter(s => new Date(s.date).getTime() >= startOfToday)
       .reduce((sum, s) => sum + s.total, 0);
-
-    const weeklySalesThisWeek = sales.filter(s => new Date(s.date).getTime() >= startOfWeek);
-    const weekSales = weeklySalesThisWeek.reduce((sum, s) => sum + s.total, 0);
+    
+    const weekSales = sales
+      .filter(s => new Date(s.date).getTime() >= startOfWeek)
+      .reduce((sum, s) => sum + s.total, 0);
     
     const monthSales = sales
       .filter(s => new Date(s.date).getTime() >= startOfMonth)
@@ -71,28 +73,17 @@ const Dashboard = () => {
     const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
 
     // --- Performance Insights ---
-    // FIX: Explicitly type the accumulator in the `reduce` function to ensure correct type inference for `itemCounts`.
     const itemCounts = sales.reduce((acc: Record<string, number>, s) => {
         acc[s.itemName] = (acc[s.itemName] || 0) + s.quantity;
         return acc;
     }, {} as Record<string, number>);
 
-    // FIX: Explicitly cast sort values to numbers to prevent potential TypeScript errors
-    // with arithmetic operations on inferred types, resolving the error on this line.
     const mostSoldItem = Object.keys(itemCounts).length > 0
         ? Object.entries(itemCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0][0]
         : 'N/A';
         
-    const salesByDate = sales.reduce((acc, sale) => {
-        const dateKey = new Date(sale.date).toISOString().split('T')[0];
-        acc[dateKey] = (acc[dateKey] || 0) + sale.total;
-        return acc;
-    }, {} as Record<string, number>);
-    const numberOfDaysWithSales = Object.keys(salesByDate).length;
-    const dailyAverage = numberOfDaysWithSales > 0 ? totalRevenue / numberOfDaysWithSales : 0;
-
-    const highestSaleOfWeek = weeklySalesThisWeek.length > 0 ? Math.max(...weeklySalesThisWeek.map(s => s.total)) : 0;
-    const totalItemsSold = sales.reduce((sum, s) => sum + s.quantity, 0);
+    const avgSaleValue = sales.length > 0 ? totalRevenue / sales.length : 0;
+    const totalUniqueItems = new Set(sales.map(s => s.itemName)).size;
 
     // --- Chart & Recent Sales ---
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -113,10 +104,14 @@ const Dashboard = () => {
         name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
         sales: salesByDayForChart[date] || 0,
     }));
+    
+    const busiestDay = chartData.length > 0 
+        ? chartData.reduce((max, day) => day.sales > max.sales ? day : max).name 
+        : 'N/A';
 
     const recentSales = sales.slice(0, 5);
 
-    return { todaySales, weekSales, monthSales, totalRevenue, mostSoldItem, recentSales, dailyAverage, highestSaleOfWeek, totalItemsSold, chartData };
+    return { todaySales, weekSales, monthSales, totalRevenue, mostSoldItem, recentSales, avgSaleValue, totalUniqueItems, busiestDay, chartData };
   }, [sales]);
 
   const formatCurrency = (amount: number) => `KSh ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -165,7 +160,7 @@ const Dashboard = () => {
         >
             <h2 className="text-xl font-semibold mb-4">Sales Trend (Last 7 Days)</h2>
             <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 12 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: '#64748B', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `KSh ${value/1000}k`}/>
@@ -176,10 +171,10 @@ const Dashboard = () => {
                         border: '1px solid #E2E8F0',
                         borderRadius: '0.75rem',
                     }}
-                    cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                    cursor={{ stroke: '#3B82F6', strokeWidth: 1, strokeDasharray: '3 3' }}
                     formatter={(value: number) => [formatCurrency(value), 'Sales']} />
-                <Bar dataKey="sales" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={30} />
-                </BarChart>
+                <Line type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4, fill: '#3B82F6' }} activeDot={{ r: 8 }}/>
+                </LineChart>
             </ResponsiveContainer>
         </motion.div>
 
@@ -196,16 +191,16 @@ const Dashboard = () => {
                 </h2>
                 <ul className="space-y-4">
                     <li className="flex items-center justify-between text-sm">
-                        <span className="text-subtle-text flex items-center gap-2"><BarChartIcon className="w-4 h-4"/>Daily Average</span>
-                        <span className="font-semibold text-on-surface">{formatCurrency(dailyAverage)}</span>
+                        <span className="text-subtle-text flex items-center gap-2"><DollarSignIcon className="w-4 h-4"/>Average Sale Value</span>
+                        <span className="font-semibold text-on-surface">{formatCurrency(avgSaleValue)}</span>
                     </li>
                     <li className="flex items-center justify-between text-sm">
-                        <span className="text-subtle-text flex items-center gap-2"><AwardIcon className="w-4 h-4"/>Highest Sale This Week</span>
-                        <span className="font-semibold text-on-surface">{formatCurrency(highestSaleOfWeek)}</span>
+                        <span className="text-subtle-text flex items-center gap-2"><AwardIcon className="w-4 h-4"/>Busiest Day (Last 7)</span>
+                        <span className="font-semibold text-on-surface">{busiestDay}</span>
                     </li>
                     <li className="flex items-center justify-between text-sm">
-                        <span className="text-subtle-text flex items-center gap-2"><PackageIcon className="w-4 h-4"/>Total Items Sold</span>
-                        <span className="font-semibold text-on-surface">{totalItemsSold.toLocaleString()}</span>
+                        <span className="text-subtle-text flex items-center gap-2"><PackageIcon className="w-4 h-4"/>Unique Items Sold</span>
+                        <span className="font-semibold text-on-surface">{totalUniqueItems.toLocaleString()}</span>
                     </li>
                 </ul>
             </motion.div>
@@ -222,7 +217,11 @@ const Dashboard = () => {
                         <div key={sale.id} className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <div className="w-10 h-10 bg-background rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <PackageIcon className="w-5 h-5 text-subtle-text"/>
+                                    {sale.photo ? (
+                                        <img src={sale.photo} alt={sale.itemName} className="w-full h-full object-cover rounded-lg" />
+                                    ) : (
+                                        <PackageIcon className="w-5 h-5 text-subtle-text"/>
+                                    )}
                                 </div>
                                 <div>
                                     <p className="font-semibold text-on-surface text-sm truncate">{sale.itemName}</p>

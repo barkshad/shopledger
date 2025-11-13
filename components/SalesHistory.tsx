@@ -5,7 +5,7 @@ import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, S
 import Spinner from './Spinner';
 import ConfirmationDialog from './ConfirmationDialog';
 import { convertToCSV, downloadCSV } from '../utils/csvUtils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EditState extends Omit<Sale, 'id' | 'total'> {
@@ -142,8 +142,6 @@ const SalesHistory = () => {
     }));
   };
   
-  // FIX: Refactored handleEditClick to ensure the object passed to setEditingSale matches the EditState type.
-  // This resolves an error where the 'id' was optional and the 'total' property was incorrectly included.
   const handleEditClick = (sale: Sale) => {
     if (sale.id !== undefined) {
       const { total, ...saleData } = sale;
@@ -158,7 +156,7 @@ const SalesHistory = () => {
   
   const handleUpdateSale = async () => {
     if (!editingSale) return;
-    const { id, itemName, quantity, price, date, photo } = editingSale;
+    const { id, itemName, quantity, price, date, photo, notes } = editingSale;
     await updateSale({
       id,
       itemName,
@@ -167,6 +165,7 @@ const SalesHistory = () => {
       total: +quantity * +price,
       date: new Date(date).toISOString(),
       photo: photo,
+      notes: notes,
     });
     setEditingSale(null);
   };
@@ -380,16 +379,16 @@ const SalesHistory = () => {
       <div className="bg-surface rounded-xl shadow-subtle p-6 border border-border-color mt-8">
         <h2 className="text-xl font-semibold mb-4">Recent Sales Activity (Last 7 Days)</h2>
         <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 12 }} />
                 <YAxis tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(value) => `KSh ${value}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(4px)', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}
                   formatter={(value: number) => [formatCurrency(value), 'Sales']}
-                  cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}/>
-                <Bar dataKey="sales" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-            </BarChart>
+                  cursor={{ stroke: '#3B82F6', strokeDasharray: '3 3' }}/>
+                <Line type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={2} dot={{r: 4}} activeDot={{r: 8}}/>
+            </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
