@@ -1,5 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+// FIX: Import Variants type from framer-motion to ensure correct type checking for animations.
+import { motion, Variants } from 'framer-motion';
 
 interface StatCardProps {
   title: string;
@@ -9,7 +10,7 @@ interface StatCardProps {
   className?: string;
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,

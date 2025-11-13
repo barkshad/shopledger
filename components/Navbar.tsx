@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DashboardIcon, PlusCircleIcon, HistoryIcon, AdminIcon } from './icons';
+import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon } from './icons';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
@@ -36,7 +36,7 @@ const Navbar = () => {
                         <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
                         <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
                         <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
-                        <NavItem to="/admin"><AdminIcon className="h-5 w-5"/><span>Admin</span></NavItem>
+                        <NavItem to="/admin"><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                     </nav>
                     <div className="-mr-2 flex md:hidden">
                         <button
@@ -74,7 +74,7 @@ const Navbar = () => {
                             <NavItem to="/" onClick={closeMenu}><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
                             <NavItem to="/add-sale" onClick={closeMenu}><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
                             <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
-                            <NavItem to="/admin" onClick={closeMenu}><AdminIcon className="h-5 w-5"/><span>Admin</span></NavItem>
+                            <NavItem to="/admin" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                         </nav>
                     </motion.div>
                 )}

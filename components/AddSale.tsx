@@ -137,7 +137,8 @@ const AddSale = () => {
                     <div className="mt-4 flex text-sm leading-6 text-gray-600">
                         <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-blue-500">
                             <span>{photoPreview ? 'Change photo' : 'Take or upload photo'}</span>
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" capture="camera" onChange={handlePhotoChange}/>
+                            {/* FIX: Removed invalid 'capture' attribute value. The browser will prompt for camera on mobile devices with just `accept="image/*"`. */}
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange}/>
                         </label>
                     </div>
                     <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF</p>

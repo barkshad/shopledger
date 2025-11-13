@@ -7,4 +7,5 @@ export interface Sale {
   total: number;
   date: string; // ISO string format
   photo?: string; // Base64 encoded image string
+  notes?: string;
 }

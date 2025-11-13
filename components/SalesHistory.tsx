@@ -142,7 +142,18 @@ const SalesHistory = () => {
     }));
   };
   
-  const handleEditClick = (sale: Sale) => sale.id && setEditingSale({ ...sale, date: sale.date.split('T')[0] });
+  // FIX: Refactored handleEditClick to ensure the object passed to setEditingSale matches the EditState type.
+  // This resolves an error where the 'id' was optional and the 'total' property was incorrectly included.
+  const handleEditClick = (sale: Sale) => {
+    if (sale.id !== undefined) {
+      const { total, ...saleData } = sale;
+      setEditingSale({
+        ...saleData,
+        id: sale.id, // Explicitly set id to satisfy the required type
+        date: sale.date.split('T')[0],
+      });
+    }
+  };
   const handleCancelEdit = () => setEditingSale(null);
   
   const handleUpdateSale = async () => {
