@@ -20,21 +20,46 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              primary: '#3B82F6', // A nice blue
-              secondary: '#10B981', // Kept for consistency, maybe use an accent color
-              background: '#F8FAFC', // Lighter background - almost white
-              surface: '#FFFFFF', // White for cards and surfaces
-              'on-surface': '#334155', // Slate-700, a blue-gray for text
+              // Light Theme
+              primary: '#4EA8FF',
+              background: '#F7F9FC',
+              surface: '#FFFFFF',
+              'on-surface': '#1A202C',
               'on-primary': '#FFFFFF',
-              'subtle-text': '#64748B', // Slate-500 for less important text
-              'border-color': '#E2E8F0', // Slate-200 for borders
+              'subtle-text': '#5A6474',
+              'border-color': '#E6EBF2',
+              danger: '#FF4757',
+
+              // Dark Theme Colors
+              'dark-background': '#0D1117',
+              'dark-surface': '#161B22',
+              'dark-on-surface': '#E4EAF2',
+              'dark-subtle-text': '#8B949E',
+              'dark-border-color': '#30363D',
+              'dark-danger': '#FF6B81',
+            },
+            borderRadius: {
+              '2xl': '1rem',
+              '3xl': '1.5rem',
+              '4xl': '2rem',
             },
             boxShadow: {
-              'subtle': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-            }
+              'soft': '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
+              'glow': '0 0 20px 0 rgba(78, 168, 255, 0.4)',
+            },
+            keyframes: {
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+            },
+            animation: {
+              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+            },
           },
         },
       }
@@ -54,7 +79,7 @@
 }
 </script>
 </head>
-  <body class="bg-background text-on-surface">
+  <body class="bg-background text-on-surface dark:bg-dark-background dark:text-dark-on-surface transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

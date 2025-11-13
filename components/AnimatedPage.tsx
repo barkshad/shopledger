@@ -2,14 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const animations = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 15 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
+  exit: { opacity: 0, y: -15 },
 };
 
-// FIX: Refactored component to use React.FC and a dedicated props interface.
-// This provides more robust type-checking and resolves an issue in App.tsx
-// where the TypeScript compiler failed to infer the `children` prop correctly.
 interface AnimatedPageProps {
   children: React.ReactNode;
 }
@@ -21,7 +18,7 @@ const AnimatedPage: React.FC<AnimatedPageProps> = ({ children }) => {
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.25 }}
     >
       {children}
     </motion.div>
