@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon } from './icons';
+import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon } from './icons';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
@@ -35,7 +35,9 @@ const Navbar = () => {
                     <nav className="hidden md:flex items-center space-x-2">
                         <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
                         <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
-                        <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
+                        <NavItem to="/add-expense"><CreditCardIcon className="h-5 w-5"/><span>Add Expense</span></NavItem>
+                        <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>Sales History</span></NavItem>
+                        <NavItem to="/expenses"><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
                         <NavItem to="/admin"><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                     </nav>
                     <div className="-mr-2 flex md:hidden">
@@ -73,7 +75,9 @@ const Navbar = () => {
                         <nav className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                             <NavItem to="/" onClick={closeMenu}><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
                             <NavItem to="/add-sale" onClick={closeMenu}><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
-                            <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
+                            <NavItem to="/add-expense" onClick={closeMenu}><CreditCardIcon className="h-5 w-5"/><span>Add Expense</span></NavItem>
+                            <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>Sales History</span></NavItem>
+                            <NavItem to="/expenses" onClick={closeMenu}><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
                             <NavItem to="/admin" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                         </nav>
                     </motion.div>

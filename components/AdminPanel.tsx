@@ -14,9 +14,11 @@ import {
   DatabaseZapIcon,
   SettingsIcon,
   UsersIcon,
+  CreditCardIcon,
 } from './icons';
+import ExpensesManagementTab from './admin/ExpensesManagementTab';
 
-type AdminTab = 'sales' | 'reports' | 'data' | 'settings';
+type AdminTab = 'sales' | 'expenses' | 'reports' | 'data' | 'settings';
 
 const AdminPanel = () => {
   const { settings } = useAdminSettings();
@@ -30,7 +32,7 @@ const AdminPanel = () => {
 
   const logAction = useCallback((message: string) => {
     setActivityLog(prev =>
-      [{ message, timestamp: new Date() }, ...prev].slice(0, 5)
+      [{ message, timestamp: new Date() }, ...prev].slice(0, 10)
     );
   }, []);
 
@@ -83,6 +85,7 @@ const AdminPanel = () => {
 
   const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'sales', label: 'Sales', icon: <ShoppingCartIcon className="h-5 w-5" /> },
+    { id: 'expenses', label: 'Expenses', icon: <CreditCardIcon className="h-5 w-5" /> },
     { id: 'reports', label: 'Reports', icon: <BarChartIcon className="h-5 w-5" /> },
     { id: 'data', label: 'Data', icon: <DatabaseZapIcon className="h-5 w-5" /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon className="h-5 w-5" /> },
@@ -124,6 +127,7 @@ const AdminPanel = () => {
               className="bg-surface p-6 rounded-xl shadow-subtle border border-border-color min-h-[60vh]"
             >
               {activeTab === 'sales' && <SalesManagementTab logAction={logAction} />}
+              {activeTab === 'expenses' && <ExpensesManagementTab logAction={logAction} />}
               {activeTab === 'reports' && <ReportsTab logAction={logAction} />}
               {activeTab === 'data' && <DataControlTab logAction={logAction} />}
               {activeTab === 'settings' && <SettingsTab logAction={logAction} />}

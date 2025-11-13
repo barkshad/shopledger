@@ -9,3 +9,13 @@ export interface Sale {
   photo?: string; // Base64 encoded image string
   notes?: string;
 }
+
+export interface Expense {
+  id?: number;
+  name: string;
+  category: string;
+  amount: number;
+  date: string; // ISO string format
+  note?: string;
+  receiptPhoto?: string; // Base64 encoded image string
+}

@@ -11,6 +11,8 @@ import AnimatedPage from './components/AnimatedPage';
 import SplashScreen from './components/SplashScreen';
 import { ToastProvider } from './hooks/useToast';
 import ToastContainer from './components/Toast';
+import AddExpense from './components/AddExpense';
+import ExpensesHistory from './components/ExpensesHistory';
 
 function App() {
   const location = useLocation();
@@ -45,7 +47,9 @@ function App() {
                 <Routes location={location} key={location.pathname}>
                   <Route path="/" element={<AnimatedPage><Dashboard /></AnimatedPage>} />
                   <Route path="/add-sale" element={<AnimatedPage><AddSale /></AnimatedPage>} />
+                  <Route path="/add-expense" element={<AnimatedPage><AddExpense /></AnimatedPage>} />
                   <Route path="/history" element={<AnimatedPage><SalesHistory /></AnimatedPage>} />
+                  <Route path="/expenses" element={<AnimatedPage><ExpensesHistory /></AnimatedPage>} />
                   <Route path="/admin" element={<AnimatedPage><AdminPanel /></AnimatedPage>} />
                 </Routes>
               </AnimatePresence>

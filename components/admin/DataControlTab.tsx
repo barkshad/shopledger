@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSales } from '../../hooks/useSales';
+import { useExpenses } from '../../hooks/useExpenses';
 import { useToast } from '../../hooks/useToast';
 import ConfirmationDialog from '../ConfirmationDialog';
 import { DownloadIcon, UploadCloudIcon, TrashIcon } from '../icons';
 
 const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ logAction }) => {
     const { sales, clearAllSales, addSale, refreshSales } = useSales();
+    const { expenses, clearAllExpenses, addExpense, refreshExpenses } = useExpenses();
     const { addToast } = useToast();
 
     const [clearDialogOpen, setClearDialogOpen] = useState(false);
@@ -20,18 +22,27 @@ const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ lo
             const usageMB = ((estimate.usage || 0) / (1024 * 1024)).toFixed(2);
             setStorageUsage(`${usageMB} MB`);
         } else {
-            const usageBytes = JSON.stringify(sales).length;
+            const usageBytes = JSON.stringify(sales).length + JSON.stringify(expenses).length;
             const usageMB = (usageBytes / (1024 * 1024)).toFixed(2);
             setStorageUsage(`~${usageMB} MB`);
         }
-    }, [sales]);
+    }, [sales, expenses]);
 
     useEffect(() => {
         calculateStorage();
-    }, [sales, calculateStorage]);
+    }, [sales, expenses, calculateStorage]);
 
     const handleExport = () => {
-        const dataStr = JSON.stringify(sales, null, 2);
+        const backupData = {
+            meta: {
+                exportedAt: new Date().toISOString(),
+                version: '2.0',
+                records: { sales: sales.length, expenses: expenses.length }
+            },
+            sales: sales,
+            expenses: expenses,
+        };
+        const dataStr = JSON.stringify(backupData, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -59,22 +70,34 @@ const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ lo
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const importedSales = JSON.parse(e.target?.result as string);
-                if (Array.isArray(importedSales)) {
+                const importedData = JSON.parse(e.target?.result as string);
+                
+                if (Array.isArray(importedData.sales) && Array.isArray(importedData.expenses)) {
                     await clearAllSales();
-                    for (const sale of importedSales) {
-                        // basic validation
+                    await clearAllExpenses();
+
+                    for (const sale of importedData.sales) {
                         if (sale.itemName && sale.quantity && sale.price && sale.date) {
-                            await addSale(sale);
+                           const {id, ...saleData} = sale;
+                           await addSale(saleData);
                         }
                     }
-                    await refreshSales(); // Manually trigger a refresh after batch adding
+                    for (const expense of importedData.expenses) {
+                       if (expense.name && expense.category && expense.amount && expense.date) {
+                           const {id, ...expenseData} = expense;
+                           await addExpense(expenseData);
+                        }
+                    }
+
+                    await refreshSales();
+                    await refreshExpenses();
                     addToast('Data imported successfully!', 'success');
-                    logAction(`Imported ${importedSales.length} sales from JSON.`);
+                    logAction(`Imported ${importedData.sales.length} sales and ${importedData.expenses.length} expenses.`);
                 } else {
                     throw new Error('Invalid file format');
                 }
             } catch (error) {
+                console.error(error);
                 addToast('Failed to import data. Invalid file.', 'error');
                 logAction('Attempted to import invalid JSON file.');
             }
@@ -84,14 +107,15 @@ const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ lo
 
     const confirmClear = async () => {
         await clearAllSales();
+        await clearAllExpenses();
         addToast('All data has been cleared.', 'success');
-        logAction('Cleared all sales data.');
+        logAction('Cleared all sales & expense data.');
     };
 
     return (
         <div className="space-y-8">
             <ConfirmationDialog isOpen={importDialogOpen} onClose={() => setImportDialogOpen(false)} onConfirm={confirmImport} title="Import Data" message="This will ERASE all current data and replace it with the backup. Are you sure you want to continue?" confirmText="Import" />
-            <ConfirmationDialog isOpen={clearDialogOpen} onClose={() => setClearDialogOpen(false)} onConfirm={confirmClear} title="Clear All Data" message="This is irreversible. Are you absolutely sure you want to delete ALL sales data?" confirmText="Yes, delete everything" />
+            <ConfirmationDialog isOpen={clearDialogOpen} onClose={() => setClearDialogOpen(false)} onConfirm={confirmClear} title="Clear All Data" message="This is irreversible. Are you absolutely sure you want to delete ALL sales AND expense data?" confirmText="Yes, delete everything" />
 
             <h2 className="text-2xl font-bold">Backup & Data Control</h2>
             
@@ -99,7 +123,7 @@ const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ lo
                 <div className="bg-background/50 p-4 rounded-lg border border-border-color">
                     <h3 className="font-semibold">Storage Usage</h3>
                     <p className="text-2xl">{storageUsage}</p>
-                    <p className="text-sm text-subtle-text">{sales.length} sale records</p>
+                    <p className="text-sm text-subtle-text">{sales.length} sales, {expenses.length} expenses</p>
                 </div>
                 <div className="bg-background/50 p-4 rounded-lg border border-border-color">
                     <h3 className="font-semibold">Last Backup</h3>
