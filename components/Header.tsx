@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon, ShoppingCartIcon } from './icons';
+import { DashboardIcon, HistoryIcon, UsersIcon, ListIcon, ShoppingCartIcon, StatsIcon } from './icons';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; }> = ({ to, children }) => (
     <NavLink
@@ -36,6 +36,7 @@ const Header = () => {
                         <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
                         <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>Sales</span></NavItem>
                         <NavItem to="/expenses"><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
+                        <NavItem to="/statistics"><StatsIcon className="h-5 w-5"/><span>Statistics</span></NavItem>
                         <NavItem to="/admin"><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                     </nav>
                 </div>

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// FIX: Added YAxis and Tooltip to recharts imports.
 import { ResponsiveContainer, AreaChart, Area, YAxis, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 import { useSales } from '../hooks/useSales';
@@ -19,9 +18,11 @@ import {
     CreditCardIcon,
     FileTextIcon,
     CameraIcon,
-    // FIX: Imported PlusCircleIcon.
-    PlusCircleIcon
+    PlusCircleIcon,
+    GaugeIcon,
+    StatsIcon,
 } from './icons';
+import { calculateHealthScore } from '../utils/statsUtils';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,6 +40,45 @@ const itemVariants = {
   visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
 };
 
+const HealthScoreGuage: React.FC<{ score: number }> = ({ score }) => {
+    const circumference = 2 * Math.PI * 40;
+    const offset = circumference - (score / 100) * circumference;
+    let colorClass = 'text-green-500';
+    if (score < 50) colorClass = 'text-red-500';
+    else if (score < 75) colorClass = 'text-yellow-500';
+
+    return (
+        <div className="relative flex items-center justify-center w-32 h-32">
+            <svg className="absolute w-full h-full" viewBox="0 0 100 100">
+                <circle
+                    className="text-border-color dark:text-dark-border-color"
+                    strokeWidth="8"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="40"
+                    cx="50"
+                    cy="50"
+                />
+                <circle
+                    className={colorClass}
+                    strokeWidth="8"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="40"
+                    cx="50"
+                    cy="50"
+                    style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 0.5s ease-out' }}
+                />
+            </svg>
+            <span className={`text-3xl font-bold ${colorClass}`}>{score}%</span>
+        </div>
+    );
+};
+
+
 const Dashboard = () => {
   const { sales, loading: salesLoading } = useSales();
   const { expenses, loading: expensesLoading } = useExpenses();
@@ -50,7 +90,8 @@ const Dashboard = () => {
     weekSales,
     monthProfit,
     last7DaysChartData,
-    recentActivity
+    recentActivity,
+    shopHealthScore,
   } = useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -101,8 +142,10 @@ const Dashboard = () => {
     const recentActivity = [...mappedSales, ...mappedExpenses]
         .sort((a, b) => b.date.getTime() - a.date.getTime())
         .slice(0, 4);
+        
+    const shopHealthScore = calculateHealthScore(sales, expenses);
 
-    return { todaySales, weekSales, monthProfit, last7DaysChartData, recentActivity };
+    return { todaySales, weekSales, monthProfit, last7DaysChartData, recentActivity, shopHealthScore };
   }, [sales, expenses]);
 
   const formatCurrency = (amount: number) => `${settings.currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -136,38 +179,37 @@ const Dashboard = () => {
         <StatCard title="This Month's Profit" value={formatCurrency(monthProfit)} icon={<WalletIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#F472B6" />
       </motion.div>
 
-      <div className="space-y-6">
-        <motion.h2 variants={itemVariants} initial="hidden" animate="visible" className="text-xl font-bold">Quick Actions</motion.h2>
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <QuickActionButton icon={<PlusCircleIcon className="w-6 h-6"/>} label="Add Sale" onClick={() => navigate('/add-sale')} />
-          <QuickActionButton icon={<CreditCardIcon className="w-6 h-6"/>} label="Add Expense" onClick={() => navigate('/add-expense')} />
-          <QuickActionButton icon={<FileTextIcon className="w-6 h-6"/>} label="Reports" onClick={() => navigate('/admin')} />
-          <QuickActionButton icon={<CameraIcon className="w-6 h-6"/>} label="Scan Item" onClick={() => {}} />
-        </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-1 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color flex flex-col items-center justify-center text-center">
+              <h2 className="text-xl font-bold mb-2 flex items-center gap-2"><GaugeIcon /> Shop Health Score</h2>
+              <p className="text-subtle-text dark:text-dark-subtle-text text-sm mb-4">An overview of your business performance.</p>
+              <HealthScoreGuage score={shopHealthScore.score} />
+              <p className="font-semibold mt-4">{shopHealthScore.status}</p>
+               <button onClick={() => navigate('/statistics')} className="mt-4 w-full bg-primary/10 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
+                  View Full Statistics <StatsIcon className="w-5 h-5" />
+               </button>
+          </motion.div>
+          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-2 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
+              <h2 className="text-xl font-bold mb-4">Weekly Performance</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={last7DaysChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4EA8FF" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#4EA8FF" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <YAxis tick={{ fill: '#5A6474', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `${settings.currency}${value/1000}k`}/>
+                  <Tooltip
+                      contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)', border: '1px solid #E6EBF2', borderRadius: '0.75rem' }}
+                      cursor={{ stroke: '#4EA8FF', strokeWidth: 1, strokeDasharray: '3 3' }}
+                      formatter={(value: number) => [formatCurrency(value), "Sales"]} />
+                  <Area type="monotone" dataKey="sales" stroke="#4EA8FF" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+                  </AreaChart>
+              </ResponsiveContainer>
+          </motion.div>
       </div>
 
-      <motion.div 
-          variants={itemVariants} initial="hidden" animate="visible"
-          className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color"
-      >
-          <h2 className="text-xl font-bold mb-4">Weekly Performance</h2>
-          <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={last7DaysChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4EA8FF" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#4EA8FF" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <YAxis tick={{ fill: '#5A6474', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `${settings.currency}${value/1000}k`}/>
-              <Tooltip
-                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)', border: '1px solid #E6EBF2', borderRadius: '0.75rem' }}
-                  cursor={{ stroke: '#4EA8FF', strokeWidth: 1, strokeDasharray: '3 3' }}
-                  formatter={(value: number) => [formatCurrency(value), "Sales"]} />
-              <Area type="monotone" dataKey="sales" stroke="#4EA8FF" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
-              </AreaChart>
-          </ResponsiveContainer>
-      </motion.div>
 
       <motion.div variants={itemVariants} initial="hidden" animate="visible" className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
           <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
