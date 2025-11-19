@@ -2,12 +2,16 @@
 import React, { useState, useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Sale } from '../types';
-import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, SortDescIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon, WalletIcon } from './icons';
+import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, SortDescIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon, WalletIcon, FileTextIcon } from './icons';
 import Spinner from './Spinner';
 import ConfirmationDialog from './ConfirmationDialog';
 import { convertToCSV, downloadCSV } from '../utils/csvUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { useAdminSettings } from '../hooks/useAdminSettings';
+import { useToast } from '../hooks/useToast';
 
 interface EditState extends Omit<Sale, 'id' | 'total'> {
     id: number;
@@ -37,11 +41,14 @@ const getPaymentBadgeColor = (method: string | undefined) => {
 
 const SalesHistory = () => {
   const { sales, loading, updateSale, deleteSale } = useSales();
+  const { settings } = useAdminSettings();
+  const { addToast } = useToast();
   
   const [editingSale, setEditingSale] = useState<EditState | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPdfExporting, setIsPdfExporting] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('All');
@@ -226,7 +233,59 @@ const SalesHistory = () => {
     setTimeout(() => setIsExporting(false), 1000);
   };
 
-  const formatCurrency = (amount: number) => `KSh ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const handleExportPDF = () => {
+      setIsPdfExporting(true);
+      try {
+          const doc = new jsPDF();
+          
+          doc.setFontSize(18);
+          doc.text('Sales Report', 14, 22);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(100);
+          doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+          const tableColumn = ["Item", "Qty", "Price", "Total", "Payment", "Date"];
+          const tableRows: any[] = [];
+
+          filteredAndSortedSales.forEach(sale => {
+              const saleData = [
+                  sale.itemName,
+                  sale.quantity,
+                  `${settings.currency} ${sale.price.toFixed(2)}`,
+                  `${settings.currency} ${sale.total.toFixed(2)}`,
+                  sale.paymentMethod || "Cash",
+                  new Date(sale.date).toLocaleDateString(),
+              ];
+              tableRows.push(saleData);
+          });
+
+          autoTable(doc, {
+              head: [tableColumn],
+              body: tableRows,
+              startY: 35,
+              theme: 'grid',
+              headStyles: { fillColor: [78, 168, 255] },
+          });
+
+          const finalY = (doc as any).lastAutoTable.finalY || 35;
+          
+          doc.setFontSize(12);
+          doc.setTextColor(0);
+          doc.text(`Total Sales Count: ${summaryStats.totalSales}`, 14, finalY + 10);
+          doc.text(`Grand Total: ${settings.currency} ${summaryStats.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 14, finalY + 16);
+
+          doc.save(`Sales_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+          addToast("PDF Export Successful", "success");
+      } catch (e) {
+          console.error(e);
+          addToast("Failed to export PDF", "error");
+      } finally {
+          setIsPdfExporting(false);
+      }
+  };
+
+  const formatCurrency = (amount: number) => `${settings.currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   const SortableHeader: React.FC<{ columnKey: SortableKey, title: string }> = ({ columnKey, title }) => (
@@ -309,12 +368,20 @@ const SalesHistory = () => {
               <label htmlFor="photo-filter" className="ml-2 block text-sm text-on-surface">Photos only</label>
           </div>
           <button
+            onClick={handleExportPDF}
+            disabled={isPdfExporting}
+            className="w-full md:w-auto bg-red-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
+          >
+              {isPdfExporting ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <FileTextIcon className="h-5 w-5" />}
+              {isPdfExporting ? 'Exporting...' : 'Export Sales (PDF)'}
+          </button>
+          <button
             onClick={handleDownloadReport}
             disabled={isExporting}
             className="w-full md:w-auto bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
           >
               {isExporting ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <DownloadIcon className="h-5 w-5" />}
-              {isExporting ? 'Exporting...' : 'Export'}
+              {isExporting ? 'Exporting...' : 'Export (CSV)'}
           </button>
       </div>
 
