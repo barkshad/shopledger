@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import { compressImage } from '../utils/imageUtils';
+
+const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
 
 const AddSale = () => {
   const { addSale } = useSales();
@@ -13,6 +16,8 @@ const AddSale = () => {
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
+  const [customPaymentMethod, setCustomPaymentMethod] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
@@ -48,12 +53,19 @@ const AddSale = () => {
       return;
     }
     
+    const finalPaymentMethod = paymentMethod === 'Other' ? customPaymentMethod.trim() : paymentMethod;
+    if (!finalPaymentMethod) {
+        addToast('Please specify a payment method.', 'error');
+        return;
+    }
+
     setIsSubmitting(true);
     try {
         const saleData = {
             itemName,
             quantity,
             price,
+            paymentMethod: finalPaymentMethod,
             date: new Date(date).toISOString(),
             photo: (settings.isPhotoSavingEnabled && photo) ? photo : undefined,
         };
@@ -63,6 +75,8 @@ const AddSale = () => {
         setItemName('');
         setQuantity(1);
         setPrice(0);
+        setPaymentMethod(PAYMENT_METHODS[0]);
+        setCustomPaymentMethod('');
         removePhoto();
         // Do not reset date, user might want to add multiple sales for the same day
         
@@ -120,6 +134,30 @@ const AddSale = () => {
                   required
                 />
             </div>
+          </div>
+
+          <div>
+              <label htmlFor="paymentMethod" className="block text-sm font-medium text-on-surface">Mode of Payment</label>
+              <select
+                  id="paymentMethod"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className={inputStyles}
+              >
+                  {PAYMENT_METHODS.map(method => (
+                      <option key={method} value={method}>{method}</option>
+                  ))}
+              </select>
+              {paymentMethod === 'Other' && (
+                  <input
+                      type="text"
+                      placeholder="Specify payment method"
+                      value={customPaymentMethod}
+                      onChange={(e) => setCustomPaymentMethod(e.target.value)}
+                      className={`${inputStyles} mt-2`}
+                      required
+                  />
+              )}
           </div>
           
           {settings.isPhotoSavingEnabled && (

@@ -3,7 +3,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { Sale, Expense } from '../types';
 
 const DB_NAME = 'ShopLedgerDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const SALES_STORE_NAME = 'sales';
 const EXPENSES_STORE_NAME = 'expenses';
 
@@ -12,7 +12,7 @@ interface ShopLedgerDB extends DBSchema {
   sales: {
     key: number;
     value: Sale;
-    indexes: { 'date': string; 'itemName': string };
+    indexes: { 'date': string; 'itemName': string; 'paymentMethod': string };
   };
   expenses: {
     key: number;
@@ -26,7 +26,7 @@ let dbPromise: Promise<IDBPDatabase<ShopLedgerDB>> | null = null;
 const getDb = () => {
   if (!dbPromise) {
     dbPromise = openDB<ShopLedgerDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, newVersion, transaction) {
         if (oldVersion < 1) {
             const store = db.createObjectStore(SALES_STORE_NAME, {
               keyPath: 'id',
@@ -42,6 +42,10 @@ const getDb = () => {
             });
             store.createIndex('date', 'date');
             store.createIndex('category', 'category');
+        }
+        if (oldVersion < 3) {
+            const store = transaction.objectStore(SALES_STORE_NAME);
+            store.createIndex('paymentMethod', 'paymentMethod');
         }
       },
     });

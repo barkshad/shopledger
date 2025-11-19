@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Sale } from '../types';
-import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, SortDescIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, SortDescIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon, WalletIcon } from './icons';
 import Spinner from './Spinner';
 import ConfirmationDialog from './ConfirmationDialog';
 import { convertToCSV, downloadCSV } from '../utils/csvUtils';
@@ -13,6 +14,8 @@ interface EditState extends Omit<Sale, 'id' | 'total'> {
     photo?: string;
 }
 
+const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
+
 const SummaryStatCard: React.FC<{ title: string; value: string; }> = ({ title, value }) => (
   <div className="bg-surface rounded-xl shadow-subtle p-4 border border-border-color">
     <h3 className="text-sm font-medium text-subtle-text truncate">{title}</h3>
@@ -20,7 +23,17 @@ const SummaryStatCard: React.FC<{ title: string; value: string; }> = ({ title, v
   </div>
 );
 
-type SortableKey = 'itemName' | 'total' | 'date';
+type SortableKey = 'itemName' | 'total' | 'date' | 'paymentMethod';
+
+const getPaymentBadgeColor = (method: string | undefined) => {
+    switch (method) {
+        case 'Cash': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+        case 'Mobile Money': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+        case 'Paybill': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+        case 'Bank Transfer': return 'bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300';
+        default: return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+    }
+};
 
 const SalesHistory = () => {
   const { sales, loading, updateSale, deleteSale } = useSales();
@@ -31,6 +44,7 @@ const SalesHistory = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showWithPhotosOnly, setShowWithPhotosOnly] = useState(false);
@@ -63,8 +77,9 @@ const SalesHistory = () => {
         const matchesSearch = sale.itemName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDate = (!start || saleDate >= start) && (!end || saleDate <= end);
         const matchesPhotoFilter = !showWithPhotosOnly || (showWithPhotosOnly && !!sale.photo);
+        const matchesPayment = paymentFilter === 'All' || sale.paymentMethod === paymentFilter;
         
-        return matchesSearch && matchesDate && matchesPhotoFilter;
+        return matchesSearch && matchesDate && matchesPhotoFilter && matchesPayment;
     });
 
     if (sortConfig.key) {
@@ -84,7 +99,7 @@ const SalesHistory = () => {
     }
 
     return filtered;
-  }, [sales, searchTerm, startDate, endDate, sortConfig, showWithPhotosOnly]);
+  }, [sales, searchTerm, startDate, endDate, sortConfig, showWithPhotosOnly, paymentFilter]);
 
   const summaryStats = useMemo(() => {
     const totalSalesCount = filteredAndSortedSales.length;
@@ -98,8 +113,6 @@ const SalesHistory = () => {
         return acc;
     }, {} as Record<string, number>);
 
-    // FIX: Explicitly cast sort values to numbers to prevent potential TypeScript errors
-    // with arithmetic operations on inferred types, resolving the error on this line.
     const mostSoldItem = Object.keys(itemCounts).length > 0
         ? Object.entries(itemCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0][0]
         : 'N/A';
@@ -147,7 +160,8 @@ const SalesHistory = () => {
       const { total, ...saleData } = sale;
       setEditingSale({
         ...saleData,
-        id: sale.id, // Explicitly set id to satisfy the required type
+        id: sale.id,
+        paymentMethod: sale.paymentMethod || 'Cash', // Fallback for old records
         date: sale.date.split('T')[0],
       });
     }
@@ -156,13 +170,14 @@ const SalesHistory = () => {
   
   const handleUpdateSale = async () => {
     if (!editingSale) return;
-    const { id, itemName, quantity, price, date, photo, notes } = editingSale;
+    const { id, itemName, quantity, price, date, photo, notes, paymentMethod } = editingSale;
     await updateSale({
       id,
       itemName,
       quantity: +quantity,
       price: +price,
       total: +quantity * +price,
+      paymentMethod,
       date: new Date(date).toISOString(),
       photo: photo,
       notes: notes,
@@ -182,7 +197,7 @@ const SalesHistory = () => {
     }
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (editingSale) setEditingSale({ ...editingSale, [e.target.name]: e.target.value });
   };
   
@@ -276,6 +291,14 @@ const SalesHistory = () => {
             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full md:w-auto md:flex-1 px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
+          <select 
+            value={paymentFilter} 
+            onChange={e => {setPaymentFilter(e.target.value); setCurrentPage(1)}} 
+            className="w-full md:w-auto px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="All">All Methods</option>
+            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
           <div className="flex items-center gap-2 w-full md:w-auto">
               <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
               <span className="text-subtle-text">-</span>
@@ -305,6 +328,7 @@ const SalesHistory = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Qty</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Price</th>
                 <SortableHeader columnKey="total" title="Total"/>
+                <SortableHeader columnKey="paymentMethod" title="Payment"/>
                 <SortableHeader columnKey="date" title="Date"/>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Actions</th>
               </tr>
@@ -327,6 +351,12 @@ const SalesHistory = () => {
                         <td className="px-6 py-4"><input type="number" name="quantity" value={editingSale.quantity} onChange={handleEditChange} className="w-20 p-1 border rounded bg-surface border-primary/50"/></td>
                         <td className="px-6 py-4"><input type="number" name="price" value={editingSale.price} onChange={handleEditChange} className="w-24 p-1 border rounded bg-surface border-primary/50"/></td>
                         <td className="px-6 py-4 font-medium">{formatCurrency(editingSale.quantity * editingSale.price)}</td>
+                        <td className="px-6 py-4">
+                            <select name="paymentMethod" value={editingSale.paymentMethod} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50 text-sm">
+                                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                                {/* Ensure user's custom method is preserved if not in list, though dropdown makes this tricky. For simplicity, custom text edit is not fully supported in quick edit row, defaults to Other if unknown */}
+                            </select>
+                        </td>
                         <td className="px-6 py-4"><input type="date" name="date" value={editingSale.date} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
                         <td className="px-6 py-4">
                             <div className="flex items-center space-x-2">
@@ -344,6 +374,11 @@ const SalesHistory = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{sale.quantity}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatCurrency(sale.price)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text font-semibold">{formatCurrency(sale.total)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentBadgeColor(sale.paymentMethod || 'Cash')}`}>
+                                {sale.paymentMethod || 'Cash'}
+                            </span>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatDate(sale.date)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">

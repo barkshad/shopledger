@@ -91,6 +91,23 @@ const AdminPanel = () => {
     { id: 'settings', label: 'Settings', icon: <SettingsIcon className="h-5 w-5" /> },
   ];
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'sales':
+        return <SalesManagementTab logAction={logAction} />;
+      case 'expenses':
+        return <ExpensesManagementTab logAction={logAction} />;
+      case 'reports':
+        return <ReportsTab logAction={logAction} />;
+      case 'data':
+        return <DataControlTab logAction={logAction} />;
+      case 'settings':
+        return <SettingsTab logAction={logAction} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -126,11 +143,7 @@ const AdminPanel = () => {
               transition={{ duration: 0.2 }}
               className="bg-surface p-6 rounded-xl shadow-subtle border border-border-color min-h-[60vh]"
             >
-              {activeTab === 'sales' && <SalesManagementTab logAction={logAction} />}
-              {activeTab === 'expenses' && <ExpensesManagementTab logAction={logAction} />}
-              {activeTab === 'reports' && <ReportsTab logAction={logAction} />}
-              {activeTab === 'data' && <DataControlTab logAction={logAction} />}
-              {activeTab === 'settings' && <SettingsTab logAction={logAction} />}
+              {renderTabContent()}
             </motion.div>
           </AnimatePresence>
         </div>

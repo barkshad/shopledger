@@ -1,3 +1,4 @@
+
 import { Sale, Expense } from '../types';
 import {
   getStartOfDay, getEndOfDay, getStartOfWeek, getEndOfWeek, getStartOfMonth, getEndOfMonth,
@@ -138,6 +139,20 @@ export const getExpenseCategoryDistribution = (expenses: Expense[]) => {
         .map(([name, value]) => ({ name, value }))
         .sort((a,b) => b.value - a.value);
 };
+
+// --- Payment Method Analysis ---
+export const getPaymentMethodDistribution = (sales: Sale[]) => {
+    const methodTotals: { [key: string]: number } = {};
+    sales.forEach(sale => {
+        // Use 'Cash' as default for old records
+        const method = sale.paymentMethod || 'Cash';
+        methodTotals[method] = (methodTotals[method] || 0) + 1; // Count occurrences
+    });
+
+    return Object.entries(methodTotals)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a,b) => b.value - a.value);
+}
 
 
 // --- Forecasting ---

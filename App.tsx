@@ -15,6 +15,7 @@ import ExpensesHistory from './components/ExpensesHistory';
 import BottomNav from './components/BottomNav';
 import FAB from './components/FAB';
 import Statistics from './components/Statistics';
+import SearchResults from './components/SearchResults';
 
 function App() {
   const location = useLocation();
@@ -56,6 +57,7 @@ function App() {
                   <Route path="/expenses" element={<AnimatedPage><ExpensesHistory /></AnimatedPage>} />
                   <Route path="/statistics" element={<AnimatedPage><Statistics /></AnimatedPage>} />
                   <Route path="/admin" element={<AnimatedPage><AdminPanel /></AnimatedPage>} />
+                  <Route path="/search" element={<AnimatedPage><SearchResults /></AnimatedPage>} />
                 </Routes>
               </AnimatePresence>
             </main>

@@ -5,6 +5,7 @@ export interface Sale {
   quantity: number;
   price: number;
   total: number;
+  paymentMethod: string;
   date: string; // ISO string format
   photo?: string; // Base64 encoded image string
   notes?: string;

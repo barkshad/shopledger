@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useSales } from '../../hooks/useSales';
 import { useToast } from '../../hooks/useToast';
@@ -138,6 +139,7 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                                    <p><strong className="text-subtle-text">Quantity:</strong> {viewingSale.quantity}</p>
                                    <p><strong className="text-subtle-text">Price:</strong> KSh {viewingSale.price.toFixed(2)}</p>
                                    <p><strong className="text-subtle-text">Total:</strong> KSh {viewingSale.total.toFixed(2)}</p>
+                                   <p className="col-span-2"><strong className="text-subtle-text">Payment Method:</strong> {viewingSale.paymentMethod || 'Cash'}</p>
                                </div>
                                <div>
                                    <label htmlFor="notes" className="block text-sm font-medium text-on-surface mb-1">Notes</label>
@@ -172,6 +174,7 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Qty</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Price</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer" onClick={() => handleSort('total')}>Total {sortConfig.key === 'total' && <SortIcon direction={sortConfig.direction}/>}</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Payment</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer" onClick={() => handleSort('date')}>Date {sortConfig.key === 'date' && <SortIcon direction={sortConfig.direction}/>}</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Actions</th>
                         </tr>
@@ -185,6 +188,15 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                                     <td className="px-6 py-4"><input type="number" value={editingSale.quantity} onChange={e => setEditingSale(s => s ? {...s, quantity: Number(e.target.value)} : null)} className="p-1 border rounded w-20"/></td>
                                     <td className="px-6 py-4"><input type="number" value={editingSale.price} onChange={e => setEditingSale(s => s ? {...s, price: Number(e.target.value)} : null)} className="p-1 border rounded w-24"/></td>
                                     <td className="px-6 py-4">KSh {(editingSale.quantity * editingSale.price).toFixed(2)}</td>
+                                    <td className="px-6 py-4">
+                                        <select value={editingSale.paymentMethod || 'Cash'} onChange={e => setEditingSale(s => s ? {...s, paymentMethod: e.target.value} : null)} className="p-1 border rounded w-full text-sm">
+                                            <option value="Cash">Cash</option>
+                                            <option value="Mobile Money">Mobile Money</option>
+                                            <option value="Paybill">Paybill</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </td>
                                     <td className="px-6 py-4"><input type="date" value={new Date(editingSale.date).toISOString().split('T')[0]} onChange={e => setEditingSale(s => s ? {...s, date: new Date(e.target.value).toISOString()}: null)} className="p-1 border rounded"/></td>
                                     <td className="px-6 py-4 flex gap-2"><button onClick={handleUpdateSale}><SaveIcon className="h-5 w-5 text-green-500"/></button><button onClick={() => setEditingSale(null)}><CancelIcon className="h-5 w-5 text-gray-500"/></button></td>
                                 </tr>
@@ -195,6 +207,7 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                                     <td className="px-6 py-4">{sale.quantity}</td>
                                     <td className="px-6 py-4">KSh {sale.price.toFixed(2)}</td>
                                     <td className="px-6 py-4">KSh {sale.total.toFixed(2)}</td>
+                                    <td className="px-6 py-4 text-sm">{sale.paymentMethod || 'Cash'}</td>
                                     <td className="px-6 py-4">{new Date(sale.date).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 flex gap-2">
                                         <button onClick={() => handleViewDetails(sale)}><InfoIcon className="h-5 w-5 text-blue-500"/></button>

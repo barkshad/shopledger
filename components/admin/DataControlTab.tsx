@@ -78,7 +78,7 @@ const DataControlTab: React.FC<{ logAction: (message: string) => void }> = ({ lo
 
                     for (const sale of importedData.sales) {
                         if (sale.itemName && sale.quantity && sale.price && sale.date) {
-                           const {id, ...saleData} = sale;
+                           const {id, total, ...saleData} = sale;
                            await addSale(saleData);
                         }
                     }

@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useExpenses } from '../hooks/useExpenses';
@@ -8,7 +9,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, AreaChart, Area } from 'recharts';
 import {
     ArrowUpRightIcon, ArrowDownRightIcon, TrendingUpIcon,
-    PieChartIcon, CpuIcon, GaugeIcon, StarIcon, TrendingDownIcon
+    PieChartIcon, CpuIcon, GaugeIcon, StarIcon, TrendingDownIcon, WalletIcon
 } from './icons';
 import { Sale } from '../types';
 
@@ -114,6 +115,7 @@ const Statistics = () => {
         slowMoving: statsUtils.getSlowMovingProducts(sales),
         peakTimes: statsUtils.getPeakTimes(sales),
         expenseCategories: statsUtils.getExpenseCategoryDistribution(expenses),
+        paymentMethods: statsUtils.getPaymentMethodDistribution(sales),
         forecast: statsUtils.getSalesForecast(sales),
         heatmapData: statsUtils.getSalesForHeatmap(sales),
         healthScore: statsUtils.calculateHealthScore(sales, expenses),
@@ -195,12 +197,12 @@ const Statistics = () => {
             </StatInsightCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-             <StatInsightCard className="lg:col-span-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <StatInsightCard className="">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><PieChartIcon /> Expense Categories</h2>
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                        <Pie data={data.expenseCategories} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                        <Pie data={data.expenseCategories} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                                 const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
                                 const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
                                 const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
@@ -213,7 +215,26 @@ const Statistics = () => {
                     </PieChart>
                 </ResponsiveContainer>
             </StatInsightCard>
-             <StatInsightCard className="lg:col-span-2">
+
+             <StatInsightCard className="">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><WalletIcon className="h-5 w-5" /> Payment Methods</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                        <Pie data={data.paymentMethods} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
+                                const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+                                const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+                                return <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize="12px">{(percent * 100).toFixed(0)}%</text>;
+                            }}>
+                            {data.paymentMethods.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[(index + 2) % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => [`${value} Sales`]} />
+                        <Legend wrapperStyle={{fontSize: "12px"}}/>
+                    </PieChart>
+                </ResponsiveContainer>
+            </StatInsightCard>
+
+             <StatInsightCard className="">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><CpuIcon /> Sales Forecast</h2>
                 <div className="h-full flex flex-col justify-around text-center">
                     <div>
