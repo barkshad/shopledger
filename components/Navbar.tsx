@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon } from './icons';
+import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon, PackageIcon, ShoppingCartIcon } from './icons';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
@@ -28,36 +29,28 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex-shrink-0">
-                        <NavLink to="/" className="text-2xl font-bold text-primary">
-                            ShopLedger
+                        <NavLink to="/" className="text-2xl font-bold text-primary flex items-center gap-2">
+                            <ShoppingCartIcon className="h-6 w-6"/> ShopLedger
                         </NavLink>
                     </div>
                     <nav className="hidden md:flex items-center space-x-2">
                         <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
-                        <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
-                        <NavItem to="/add-expense"><CreditCardIcon className="h-5 w-5"/><span>Add Expense</span></NavItem>
-                        <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>Sales History</span></NavItem>
+                        <NavItem to="/add-sale"><PlusCircleIcon className="h-5 w-5"/><span>POS</span></NavItem>
+                        <NavItem to="/products"><PackageIcon className="h-5 w-5"/><span>Products</span></NavItem>
+                        <NavItem to="/customers"><UsersIcon className="h-5 w-5"/><span>Customers</span></NavItem>
+                        <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>History</span></NavItem>
                         <NavItem to="/expenses"><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
-                        <NavItem to="/admin"><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                     </nav>
                     <div className="-mr-2 flex md:hidden">
                         <button
                             onClick={() => setIsOpen(!isOpen)}
                             type="button"
                             className="inline-flex items-center justify-center p-2 rounded-md text-subtle-text hover:text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
-                            aria-controls="mobile-menu"
-                            aria-expanded={isOpen}
                         >
                             <span className="sr-only">Open main menu</span>
-                            {!isOpen ? (
-                                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            ) : (
-                                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            )}
+                            <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -70,12 +63,12 @@ const Navbar = () => {
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         className="md:hidden"
-                        id="mobile-menu"
                     >
                         <nav className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                             <NavItem to="/" onClick={closeMenu}><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
-                            <NavItem to="/add-sale" onClick={closeMenu}><PlusCircleIcon className="h-5 w-5"/><span>Add Sale</span></NavItem>
-                            <NavItem to="/add-expense" onClick={closeMenu}><CreditCardIcon className="h-5 w-5"/><span>Add Expense</span></NavItem>
+                            <NavItem to="/add-sale" onClick={closeMenu}><PlusCircleIcon className="h-5 w-5"/><span>POS</span></NavItem>
+                            <NavItem to="/products" onClick={closeMenu}><PackageIcon className="h-5 w-5"/><span>Products</span></NavItem>
+                             <NavItem to="/customers" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Customers</span></NavItem>
                             <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>Sales History</span></NavItem>
                             <NavItem to="/expenses" onClick={closeMenu}><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
                             <NavItem to="/admin" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>

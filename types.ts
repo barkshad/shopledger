@@ -9,6 +9,13 @@ export interface Sale {
   date: string; // ISO string format
   photo?: string; // Base64 encoded image string
   notes?: string;
+  // New fields
+  productId?: number;
+  customerId?: number;
+  salesperson?: string;
+  discount?: number; // Amount
+  paymentDetails?: string; // JSON string for split payments
+  transactionId?: string; // To group items in a cart
 }
 
 export interface Expense {
@@ -19,4 +26,26 @@ export interface Expense {
   date: string; // ISO string format
   note?: string;
   receiptPhoto?: string; // Base64 encoded image string
+}
+
+export interface Product {
+  id?: number;
+  name: string;
+  barcode?: string;
+  price: number;
+  costPrice?: number;
+  stock: number;
+  minStock: number;
+  category?: string;
+}
+
+export interface Customer {
+  id?: number;
+  name: string;
+  phone?: string;
+  email?: string;
+  totalSpent: number;
+  visitCount: number;
+  lastVisit?: string;
+  notes?: string;
 }

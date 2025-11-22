@@ -1,14 +1,13 @@
 
-import { Sale } from '../types';
-
-export const convertToCSV = (data: Sale[]): string => {
+export const convertToCSV = <T extends object>(data: T[]): string => {
   if (data.length === 0) return '';
   const headers = Object.keys(data[0]);
   const csvRows = [headers.join(',')];
 
   for (const row of data) {
     const values = headers.map(header => {
-      const escaped = ('' + row[header as keyof Sale]).replace(/"/g, '\\"');
+      const val = (row as Record<string, any>)[header];
+      const escaped = ('' + (val ?? '')).replace(/"/g, '\\"');
       return `"${escaped}"`;
     });
     csvRows.push(values.join(','));

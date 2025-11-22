@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, YAxis, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
@@ -8,6 +9,8 @@ import { useAdminSettings } from '../hooks/useAdminSettings';
 import StatCard from './StatCard';
 import { getStartOfWeek, getStartOfMonth } from '../utils/dateUtils';
 import Spinner from './Spinner';
+import * as db from '../services/db';
+import { Product } from '../types';
 import { 
     DollarSignIcon,
     WalletIcon,
@@ -21,6 +24,7 @@ import {
     PlusCircleIcon,
     GaugeIcon,
     StatsIcon,
+    AlertTriangleIcon
 } from './icons';
 import { calculateHealthScore } from '../utils/statsUtils';
 
@@ -84,6 +88,15 @@ const Dashboard = () => {
   const { expenses, loading: expensesLoading } = useExpenses();
   const { settings } = useAdminSettings();
   const navigate = useNavigate();
+  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+      const checkStock = async () => {
+          const allProducts = await db.getAllProducts();
+          setLowStockProducts(allProducts.filter(p => p.stock <= p.minStock));
+      };
+      checkStock();
+  }, [sales]); // Re-check when sales change
 
   const {
     todaySales,
@@ -154,13 +167,6 @@ const Dashboard = () => {
     return <Spinner />;
   }
 
-  const QuickActionButton: React.FC<{icon: React.ReactNode, label: string, onClick: () => void}> = ({ icon, label, onClick }) => (
-    <motion.button variants={itemVariants} onClick={onClick} className="flex flex-col items-center justify-center gap-2 p-4 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors">
-      <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 text-primary rounded-full flex items-center justify-center">{icon}</div>
-      <span className="font-semibold text-sm">{label}</span>
-    </motion.button>
-  );
-
   return (
     <div className="space-y-8 animate-fade-in-up">
       <motion.div variants={itemVariants} initial="hidden" animate="visible">
@@ -178,6 +184,23 @@ const Dashboard = () => {
         <StatCard title="This Week's Sales" value={formatCurrency(weekSales)} icon={<TrendingUpIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#34D399" />
         <StatCard title="This Month's Profit" value={formatCurrency(monthProfit)} icon={<WalletIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#F472B6" />
       </motion.div>
+
+       {lowStockProducts.length > 0 && (
+            <motion.div variants={itemVariants} initial="hidden" animate="visible" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-start gap-4">
+                <AlertTriangleIcon className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
+                <div>
+                    <h3 className="font-bold text-red-700 dark:text-red-300">Low Stock Alert</h3>
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-2">The following items are running low:</p>
+                    <ul className="list-disc list-inside text-sm text-red-700 dark:text-red-300">
+                        {lowStockProducts.slice(0, 3).map(p => (
+                            <li key={p.id}>{p.name} (Only {p.stock} left)</li>
+                        ))}
+                        {lowStockProducts.length > 3 && <li>...and {lowStockProducts.length - 3} more</li>}
+                    </ul>
+                    <Link to="/products" className="text-xs font-bold text-red-700 dark:text-red-300 underline mt-2 block">Manage Inventory &rarr;</Link>
+                </div>
+            </motion.div>
+       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <motion.div variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-1 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color flex flex-col items-center justify-center text-center">
@@ -209,7 +232,6 @@ const Dashboard = () => {
               </ResponsiveContainer>
           </motion.div>
       </div>
-
 
       <motion.div variants={itemVariants} initial="hidden" animate="visible" className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
           <h2 className="text-xl font-bold mb-4">Recent Activity</h2>

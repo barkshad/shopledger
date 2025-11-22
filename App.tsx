@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -16,6 +17,8 @@ import BottomNav from './components/BottomNav';
 import FAB from './components/FAB';
 import Statistics from './components/Statistics';
 import SearchResults from './components/SearchResults';
+import ProductManagement from './components/ProductManagement';
+import CustomerManagement from './components/CustomerManagement';
 
 function App() {
   const location = useLocation();
@@ -24,12 +27,12 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 2500); // Splash screen duration
+    }, 2000); // Splash screen duration
 
     return () => clearTimeout(timer);
   }, []);
 
-  const fabPaths = ['/', '/history', '/expenses'];
+  const fabPaths = ['/', '/history', '/expenses', '/products', '/customers'];
   const showFab = fabPaths.includes(location.pathname);
 
   return (
@@ -52,6 +55,8 @@ function App() {
                 <Routes location={location} key={location.pathname}>
                   <Route path="/" element={<AnimatedPage><Dashboard /></AnimatedPage>} />
                   <Route path="/add-sale" element={<AnimatedPage><AddSale /></AnimatedPage>} />
+                  <Route path="/products" element={<AnimatedPage><ProductManagement /></AnimatedPage>} />
+                  <Route path="/customers" element={<AnimatedPage><CustomerManagement /></AnimatedPage>} />
                   <Route path="/add-expense" element={<AnimatedPage><AddExpense /></AnimatedPage>} />
                   <Route path="/history" element={<AnimatedPage><SalesHistory /></AnimatedPage>} />
                   <Route path="/expenses" element={<AnimatedPage><ExpensesHistory /></AnimatedPage>} />

@@ -8,7 +8,7 @@ import ConfirmationDialog from '../ConfirmationDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditIcon, TrashIcon, SaveIcon, CancelIcon, PackageIcon, InfoIcon, SortAscIcon, SortDescIcon, ChevronLeftIcon, ChevronRightIcon } from '../icons';
 
-type SortableKey = 'itemName' | 'total' | 'date';
+type SortableKey = 'itemName' | 'total' | 'date' | 'paymentMethod';
 
 const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = ({ logAction }) => {
     const { sales, loading, updateSale, deleteSale } = useSales();
@@ -38,15 +38,27 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
             .filter(s => priceRange.max === '' || s.total <= Number(priceRange.max));
 
         filtered.sort((a, b) => {
-            let aValue: string | number = a[sortConfig.key];
-            let bValue: string | number = b[sortConfig.key];
             if (sortConfig.key === 'date') {
-                aValue = new Date(a.date).getTime();
-                bValue = new Date(b.date).getTime();
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
             }
-            if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-            if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
-            return 0;
+
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            // Handle Numeric Sorting
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
+            }
+
+            // Handle String Sorting (Case Insensitive)
+            const strA = String(aValue || '').toLowerCase();
+            const strB = String(bValue || '').toLowerCase();
+            
+            return sortConfig.direction === 'ascending'
+                ? strA.localeCompare(strB)
+                : strB.localeCompare(strA);
         });
         return filtered;
     }, [sales, searchTerm, priceRange, sortConfig]);
@@ -170,11 +182,11 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                     <thead className="bg-background/80">
                         <tr>
                             <th className="px-4 py-3"><input type="checkbox" onChange={handleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === paginatedSales.length} /></th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Item</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer" onClick={() => handleSort('itemName')}>Item {sortConfig.key === 'itemName' && <SortIcon direction={sortConfig.direction}/>}</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Qty</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Price</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer" onClick={() => handleSort('total')}>Total {sortConfig.key === 'total' && <SortIcon direction={sortConfig.direction}/>}</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Payment</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer" onClick={() => handleSort('paymentMethod')}>Payment {sortConfig.key === 'paymentMethod' && <SortIcon direction={sortConfig.direction}/>}</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer" onClick={() => handleSort('date')}>Date {sortConfig.key === 'date' && <SortIcon direction={sortConfig.direction}/>}</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Actions</th>
                         </tr>

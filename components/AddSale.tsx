@@ -1,216 +1,437 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
-import { compressImage } from '../utils/imageUtils';
+import * as db from '../services/db';
+import { Product, Customer, Sale } from '../types';
+import { PlusCircleIcon, TrashIcon, ShoppingCartIcon, UsersIcon, CreditCardIcon, SaveIcon, SearchIcon } from './icons';
+import { nanoid } from 'nanoid';
 
-const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
+const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other', 'Split'];
+
+interface CartItem {
+    tempId: string;
+    productId?: number;
+    name: string;
+    quantity: number;
+    price: number;
+    discount: number; // Fixed amount
+    total: number;
+}
 
 const AddSale = () => {
   const { addSale } = useSales();
   const { addToast } = useToast();
   const { settings } = useAdminSettings();
-  
-  const [itemName, setItemName] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [price, setPrice] = useState(0);
+
+  // Data Sources
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  // Form State
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
-  const [customPaymentMethod, setCustomPaymentMethod] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [salesperson, setSalesperson] = useState('Admin');
+  
+  // Product Input State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [barcodeInput, setBarcodeInput] = useState('');
+  
+  // Checkout State
+  const [isCheckout, setIsCheckout] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [amountTendered, setAmountTendered] = useState(0);
+  const [splitDetails, setSplitDetails] = useState<{method: string, amount: number}[]>([{method: 'Cash', amount: 0}, {method: 'Mobile Money', amount: 0}]);
 
   useEffect(() => {
-    setTotal(quantity * price);
-  }, [quantity, price]);
+      const loadData = async () => {
+          setProducts(await db.getAllProducts());
+          setCustomers(await db.getAllCustomers());
+      };
+      loadData();
+  }, []);
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        const compressedBase64 = await compressImage(file);
-        setPhotoPreview(compressedBase64);
-        setPhoto(compressedBase64);
-      } catch (error) {
-        console.error("Failed to compress image:", error);
-        addToast("Could not process image.", "error");
+  const addToCart = (product?: Product, manualName?: string, manualPrice?: number) => {
+      const existingItem = product ? cart.find(item => item.productId === product.id) : null;
+      
+      if (existingItem) {
+          setCart(cart.map(item => 
+              item.tempId === existingItem.tempId 
+                  ? { ...item, quantity: item.quantity + 1, total: (item.price * (item.quantity + 1)) - item.discount } 
+                  : item
+          ));
+      } else {
+          const price = product ? product.price : (manualPrice || 0);
+          const name = product ? product.name : (manualName || 'Unknown Item');
+          const newItem: CartItem = {
+              tempId: nanoid(),
+              productId: product?.id,
+              name,
+              quantity: 1,
+              price,
+              discount: 0,
+              total: price,
+          };
+          setCart([...cart, newItem]);
       }
-    }
+      setSearchTerm('');
+      setBarcodeInput('');
   };
 
-  const removePhoto = () => {
-    setPhoto(null);
-    setPhotoPreview(null);
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!itemName || quantity <= 0 || price <= 0) {
-      addToast('Please fill in all fields with valid values.', 'error');
-      return;
-    }
-    
-    const finalPaymentMethod = paymentMethod === 'Other' ? customPaymentMethod.trim() : paymentMethod;
-    if (!finalPaymentMethod) {
-        addToast('Please specify a payment method.', 'error');
-        return;
-    }
-
-    setIsSubmitting(true);
-    try {
-        const saleData = {
-            itemName,
-            quantity,
-            price,
-            paymentMethod: finalPaymentMethod,
-            date: new Date(date).toISOString(),
-            photo: (settings.isPhotoSavingEnabled && photo) ? photo : undefined,
-        };
-        await addSale(saleData);
-
-        addToast(photo && settings.isPhotoSavingEnabled ? 'Sale with photo saved!' : 'Sale recorded successfully!', 'success');
-        setItemName('');
-        setQuantity(1);
-        setPrice(0);
-        setPaymentMethod(PAYMENT_METHODS[0]);
-        setCustomPaymentMethod('');
-        removePhoto();
-        // Do not reset date, user might want to add multiple sales for the same day
-        
-    } catch (error) {
-        console.error("Failed to add sale:", error);
-        addToast("There was an error saving the sale.", "error");
-    } finally {
-        setIsSubmitting(false);
-    }
+  const handleBarcodeScan = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+          const product = products.find(p => p.barcode === barcodeInput);
+          if (product) {
+              addToCart(product);
+              addToast(`Added ${product.name}`, 'success');
+          } else {
+              addToast('Product not found', 'error');
+          }
+          setBarcodeInput('');
+      }
   };
-  
-  const inputStyles = "mt-1 block w-full px-3 py-2 bg-surface border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm";
-  
-  const formatCurrency = (amount: number) => `KSh ${amount.toLocaleString()}`;
+
+  const handleProductSearch = (term: string) => {
+      setSearchTerm(term);
+  };
+
+  const selectProduct = (product: Product) => {
+      addToCart(product);
+  };
+
+  const removeFromCart = (tempId: string) => {
+      setCart(cart.filter(item => item.tempId !== tempId));
+  };
+
+  const updateCartItem = (tempId: string, field: keyof CartItem, value: number) => {
+      setCart(cart.map(item => {
+          if (item.tempId === tempId) {
+              const updated = { ...item, [field]: value };
+              updated.total = (updated.price * updated.quantity) - updated.discount;
+              return updated;
+          }
+          return item;
+      }));
+  };
+
+  const calculateGrandTotal = () => {
+      return cart.reduce((sum, item) => sum + item.total, 0);
+  };
+
+  const handleCheckout = async () => {
+      if (cart.length === 0) {
+          addToast('Cart is empty', 'error');
+          return;
+      }
+      
+      const grandTotal = calculateGrandTotal();
+      let finalPaymentDetails = '';
+      
+      if (paymentMethod === 'Split') {
+          const splitTotal = splitDetails.reduce((sum, s) => sum + s.amount, 0);
+          if (Math.abs(splitTotal - grandTotal) > 1) {
+              addToast(`Split amounts must equal total (${formatCurrency(grandTotal)})`, 'error');
+              return;
+          }
+          finalPaymentDetails = JSON.stringify(splitDetails);
+      } else if (paymentMethod === 'Cash') {
+           if (amountTendered < grandTotal && amountTendered !== 0) { // Allow 0 for quick entry if needed, but usually check
+               // warning
+           }
+      }
+
+      const transactionId = nanoid();
+
+      // Save Sales
+      for (const item of cart) {
+          const saleData: Omit<Sale, 'id'> = {
+              itemName: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.total,
+              paymentMethod,
+              date: new Date(date).toISOString(),
+              productId: item.productId,
+              customerId: selectedCustomer?.id,
+              salesperson,
+              discount: item.discount,
+              transactionId,
+              paymentDetails: finalPaymentDetails || undefined
+          };
+          await addSale(saleData);
+
+          // Deduct Stock
+          if (item.productId) {
+              const product = products.find(p => p.id === item.productId);
+              if (product) {
+                  await db.updateProduct({ ...product, stock: product.stock - item.quantity });
+              }
+          }
+      }
+
+      // Update Customer Loyalty
+      if (selectedCustomer && selectedCustomer.id) {
+          await db.updateCustomer({
+              ...selectedCustomer,
+              totalSpent: selectedCustomer.totalSpent + grandTotal,
+              visitCount: selectedCustomer.visitCount + 1,
+              lastVisit: new Date().toISOString()
+          });
+      }
+
+      addToast('Sale completed successfully!', 'success');
+      setCart([]);
+      setIsCheckout(false);
+      setSelectedCustomer(null);
+      setAmountTendered(0);
+      
+      // Refresh products to reflect stock changes
+      setProducts(await db.getAllProducts());
+  };
+
+  const formatCurrency = (amount: number) => `${settings.currency} ${amount.toLocaleString()}`;
+
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.barcode?.includes(searchTerm));
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Record a New Sale</h1>
-      <div className="bg-surface p-8 rounded-xl shadow-subtle border border-border-color">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="itemName" className="block text-sm font-medium text-on-surface">Item Name</label>
-            <input
-              type="text"
-              id="itemName"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              className={inputStyles}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label htmlFor="quantity" className="block text-sm font-medium text-on-surface">Quantity</label>
-                <input
-                  type="number"
-                  id="quantity"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className={inputStyles}
-                  min="1"
-                  required
-                />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+        {/* Left Panel: Product Selection & Cart */}
+        <div className="lg:col-span-2 flex flex-col gap-4 h-full overflow-hidden">
+            <div className="bg-surface dark:bg-dark-surface p-4 rounded-xl shadow-sm border border-border-color flex flex-col gap-4">
+                <div className="flex gap-4">
+                     <div className="flex-1 relative">
+                        <SearchIcon className="absolute left-3 top-3 h-5 w-5 text-subtle-text"/>
+                        <input 
+                            type="text" 
+                            placeholder="Search products..." 
+                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-color bg-background dark:bg-dark-background focus:ring-2 focus:ring-primary focus:outline-none"
+                            value={searchTerm}
+                            onChange={e => handleProductSearch(e.target.value)}
+                        />
+                        {searchTerm && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-surface dark:bg-dark-surface border border-border-color rounded-lg shadow-lg max-h-60 overflow-y-auto z-20">
+                                {filteredProducts.map(p => (
+                                    <div key={p.id} onClick={() => selectProduct(p)} className="p-3 hover:bg-primary/10 cursor-pointer flex justify-between border-b border-border-color last:border-0">
+                                        <span>{p.name}</span>
+                                        <div className="text-right">
+                                            <span className="font-bold block">{formatCurrency(p.price)}</span>
+                                            <span className={`text-xs ${p.stock <= p.minStock ? 'text-red-500' : 'text-green-500'}`}>{p.stock} in stock</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div onClick={() => addToCart(undefined, searchTerm, 0)} className="p-3 hover:bg-primary/10 cursor-pointer text-primary font-semibold border-t border-border-color">
+                                    Add custom item "{searchTerm}"
+                                </div>
+                            </div>
+                        )}
+                     </div>
+                     <input 
+                        type="text" 
+                        placeholder="Scan Barcode" 
+                        className="w-40 px-4 py-2 rounded-lg border border-border-color bg-background dark:bg-dark-background focus:ring-2 focus:ring-primary focus:outline-none"
+                        value={barcodeInput}
+                        onChange={e => setBarcodeInput(e.target.value)}
+                        onKeyDown={handleBarcodeScan}
+                        autoFocus
+                     />
+                </div>
             </div>
-            <div>
-                <label htmlFor="price" className="block text-sm font-medium text-on-surface">Price (per item)</label>
-                <input
-                  type="number"
-                  id="price"
-                  value={price}
-                  onChange={(e) => setPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className={inputStyles}
-                  min="0"
-                  step="0.01"
-                  required
-                />
-            </div>
-          </div>
 
-          <div>
-              <label htmlFor="paymentMethod" className="block text-sm font-medium text-on-surface">Mode of Payment</label>
-              <select
-                  id="paymentMethod"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className={inputStyles}
-              >
-                  {PAYMENT_METHODS.map(method => (
-                      <option key={method} value={method}>{method}</option>
-                  ))}
-              </select>
-              {paymentMethod === 'Other' && (
-                  <input
-                      type="text"
-                      placeholder="Specify payment method"
-                      value={customPaymentMethod}
-                      onChange={(e) => setCustomPaymentMethod(e.target.value)}
-                      className={`${inputStyles} mt-2`}
-                      required
-                  />
-              )}
-          </div>
-          
-          {settings.isPhotoSavingEnabled && (
-            <div>
-              <label className="block text-sm font-medium text-on-surface">Product Photo</label>
-              <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border-color px-6 py-10">
-                  <div className="text-center">
-                      {photoPreview ? (
-                          <img src={photoPreview} alt="Product Preview" className="mx-auto h-24 w-24 object-cover rounded-md" />
-                      ) : (
-                          <svg className="mx-auto h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12A2.25 2.25 0 0120.25 20.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                          </svg>
-                      )}
-                      <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                          <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-blue-500">
-                              <span>{photoPreview ? 'Change photo' : 'Take or upload photo'}</span>
-                              <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange}/>
-                          </label>
-                      </div>
-                      <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
-                      {photoPreview && <button type="button" onClick={removePhoto} className="mt-2 text-xs text-red-500 hover:underline">Remove photo</button>}
-                  </div>
-              </div>
+            <div className="flex-1 bg-surface dark:bg-dark-surface rounded-xl shadow-sm border border-border-color overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-border-color flex justify-between items-center bg-background/50">
+                    <h2 className="font-bold flex items-center gap-2"><ShoppingCartIcon className="h-5 w-5"/> Current Cart ({cart.length})</h2>
+                    <button onClick={() => setCart([])} className="text-red-500 text-sm hover:underline">Clear Cart</button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2">
+                    {cart.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-subtle-text">
+                            <ShoppingCartIcon className="h-12 w-12 mb-2 opacity-20"/>
+                            <p>Cart is empty</p>
+                            <p className="text-xs">Scan barcode or search items</p>
+                        </div>
+                    ) : (
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-background text-xs uppercase text-subtle-text sticky top-0">
+                                <tr>
+                                    <th className="p-3">Item</th>
+                                    <th className="p-3 w-20">Price</th>
+                                    <th className="p-3 w-24">Qty</th>
+                                    <th className="p-3 w-20">Disc.</th>
+                                    <th className="p-3 w-24 text-right">Total</th>
+                                    <th className="p-3 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border-color">
+                                {cart.map(item => (
+                                    <tr key={item.tempId} className="hover:bg-primary/5">
+                                        <td className="p-3">
+                                            <div className="font-medium">{item.name}</div>
+                                        </td>
+                                        <td className="p-3">
+                                            <input 
+                                                type="number" 
+                                                value={item.price} 
+                                                onChange={(e) => updateCartItem(item.tempId, 'price', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm"
+                                            />
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="flex items-center border border-border-color rounded-md bg-background">
+                                                <button onClick={() => updateCartItem(item.tempId, 'quantity', Math.max(1, item.quantity - 1))} className="px-2 hover:bg-gray-200">-</button>
+                                                <input 
+                                                    type="number" 
+                                                    value={item.quantity} 
+                                                    onChange={(e) => updateCartItem(item.tempId, 'quantity', parseFloat(e.target.value) || 1)}
+                                                    className="w-full text-center bg-transparent border-none focus:ring-0 p-0 text-sm no-spinner"
+                                                />
+                                                <button onClick={() => updateCartItem(item.tempId, 'quantity', item.quantity + 1)} className="px-2 hover:bg-gray-200">+</button>
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
+                                            <input 
+                                                type="number" 
+                                                value={item.discount} 
+                                                onChange={(e) => updateCartItem(item.tempId, 'discount', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-transparent border-b border-border-color focus:border-primary focus:ring-0 p-0 text-sm"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="p-3 text-right font-semibold">
+                                            {formatCurrency(item.total)}
+                                        </td>
+                                        <td className="p-3 text-center">
+                                            <button onClick={() => removeFromCart(item.tempId)} className="text-subtle-text hover:text-red-500"><TrashIcon className="h-4 w-4"/></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+                <div className="p-4 border-t border-border-color bg-surface">
+                    <div className="flex justify-between items-center text-xl font-bold">
+                        <span>Total</span>
+                        <span className="text-primary">{formatCurrency(calculateGrandTotal())}</span>
+                    </div>
+                </div>
             </div>
-          )}
+        </div>
 
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-on-surface">Date of Sale</label>
-            <input
-              type="date"
-              id="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className={inputStyles}
-              required
-            />
-          </div>
-          <div className="text-right border-t border-border-color pt-6">
-            <p className="text-lg font-semibold text-on-surface">
-                Total: <span className="text-primary font-bold">{formatCurrency(total)}</span>
-            </p>
-          </div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary text-on-primary font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {isSubmitting && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>}
-            {isSubmitting ? 'Saving...' : 'Save Sale'}
-          </button>
-        </form>
-      </div>
+        {/* Right Panel: Transaction Details */}
+        <div className="bg-surface dark:bg-dark-surface rounded-xl shadow-sm border border-border-color p-6 h-full flex flex-col gap-6 overflow-y-auto">
+            <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2"><UsersIcon className="h-4 w-4"/> Customer & Salesperson</h3>
+                <div className="space-y-3">
+                    <div>
+                        <label className="text-xs text-subtle-text block mb-1">Select Customer</label>
+                        <select 
+                            className="w-full p-2 rounded-lg border border-border-color bg-background dark:bg-dark-background"
+                            onChange={(e) => setSelectedCustomer(customers.find(c => c.id === Number(e.target.value)) || null)}
+                            value={selectedCustomer?.id || ''}
+                        >
+                            <option value="">Walk-in Customer</option>
+                            {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-xs text-subtle-text block mb-1">Salesperson</label>
+                         <select 
+                            className="w-full p-2 rounded-lg border border-border-color bg-background dark:bg-dark-background"
+                            value={salesperson}
+                            onChange={e => setSalesperson(e.target.value)}
+                        >
+                            <option>Admin</option>
+                            <option>Staff 1</option>
+                            <option>Staff 2</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label className="text-xs text-subtle-text block mb-1">Date</label>
+                        <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded-lg border border-border-color bg-background dark:bg-dark-background" />
+                    </div>
+                </div>
+            </div>
+
+            <hr className="border-border-color"/>
+
+            <div>
+                 <h3 className="font-semibold mb-3 flex items-center gap-2"><CreditCardIcon className="h-4 w-4"/> Payment</h3>
+                 <div className="grid grid-cols-2 gap-2 mb-4">
+                     {PAYMENT_METHODS.map(method => (
+                         <button 
+                            key={method}
+                            onClick={() => setPaymentMethod(method)}
+                            className={`py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${paymentMethod === method ? 'bg-primary text-white border-primary' : 'bg-background border-border-color hover:border-primary'}`}
+                         >
+                             {method}
+                         </button>
+                     ))}
+                 </div>
+
+                 {paymentMethod === 'Cash' && (
+                     <div className="space-y-3 bg-background/50 p-4 rounded-lg">
+                         <div>
+                             <label className="text-xs text-subtle-text block mb-1">Amount Tendered</label>
+                             <input type="number" value={amountTendered} onChange={e => setAmountTendered(parseFloat(e.target.value))} className="w-full p-2 rounded-lg border border-border-color text-lg font-bold" />
+                         </div>
+                         <div className="flex justify-between items-center text-sm">
+                             <span>Change:</span>
+                             <span className={`font-bold ${amountTendered - calculateGrandTotal() < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                 {formatCurrency(amountTendered > 0 ? amountTendered - calculateGrandTotal() : 0)}
+                             </span>
+                         </div>
+                     </div>
+                 )}
+
+                 {paymentMethod === 'Split' && (
+                     <div className="space-y-2 bg-background/50 p-4 rounded-lg">
+                         {splitDetails.map((split, idx) => (
+                             <div key={idx} className="flex gap-2">
+                                 <select 
+                                    value={split.method}
+                                    onChange={(e) => {
+                                        const newSplits = [...splitDetails];
+                                        newSplits[idx].method = e.target.value;
+                                        setSplitDetails(newSplits);
+                                    }}
+                                    className="flex-1 p-1 text-sm rounded border border-border-color"
+                                 >
+                                     {PAYMENT_METHODS.filter(p => p !== 'Split').map(p => <option key={p}>{p}</option>)}
+                                 </select>
+                                 <input 
+                                    type="number" 
+                                    value={split.amount}
+                                    onChange={(e) => {
+                                        const newSplits = [...splitDetails];
+                                        newSplits[idx].amount = parseFloat(e.target.value) || 0;
+                                        setSplitDetails(newSplits);
+                                    }}
+                                    className="w-24 p-1 text-sm rounded border border-border-color"
+                                 />
+                                 <button onClick={() => setSplitDetails(splitDetails.filter((_, i) => i !== idx))} className="text-red-500">x</button>
+                             </div>
+                         ))}
+                         <button onClick={() => setSplitDetails([...splitDetails, {method: 'Cash', amount: 0}])} className="text-xs text-primary font-semibold">+ Add Payment</button>
+                         <div className="text-right text-xs">
+                             Total: {formatCurrency(splitDetails.reduce((s, i) => s + i.amount, 0))} / {formatCurrency(calculateGrandTotal())}
+                         </div>
+                     </div>
+                 )}
+            </div>
+
+            <div className="mt-auto">
+                <button 
+                    onClick={handleCheckout}
+                    disabled={cart.length === 0}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <SaveIcon className="h-6 w-6"/> 
+                    Checkout {formatCurrency(calculateGrandTotal())}
+                </button>
+            </div>
+        </div>
     </div>
   );
 };

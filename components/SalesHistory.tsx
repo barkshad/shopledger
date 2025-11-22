@@ -91,17 +91,28 @@ const SalesHistory = () => {
 
     if (sortConfig.key) {
         filtered.sort((a, b) => {
-            let aValue: string | number = a[sortConfig.key];
-            let bValue: string | number = b[sortConfig.key];
-
+            // Handle Date Sorting
             if (sortConfig.key === 'date') {
-                aValue = new Date(a.date).getTime();
-                bValue = new Date(b.date).getTime();
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
             }
 
-            if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-            if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
-            return 0;
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            // Handle Numeric Sorting (Total, Price, Quantity)
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
+            }
+
+            // Handle String Sorting (Item Name, Payment Method) - Case Insensitive
+            const strA = String(aValue || '').toLowerCase();
+            const strB = String(bValue || '').toLowerCase();
+
+            return sortConfig.direction === 'ascending' 
+                ? strA.localeCompare(strB) 
+                : strB.localeCompare(strA);
         });
     }
 
@@ -128,6 +139,7 @@ const SalesHistory = () => {
   }, [filteredAndSortedSales]);
   
   const chartData = useMemo(() => {
+      // Use last 7 days relative to today for the chart
       const last7Days = Array.from({ length: 7 }, (_, i) => {
           const d = new Date();
           d.setDate(d.getDate() - i);
@@ -289,12 +301,12 @@ const SalesHistory = () => {
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   const SortableHeader: React.FC<{ columnKey: SortableKey, title: string }> = ({ columnKey, title }) => (
-    <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider cursor-pointer" onClick={() => handleSort(columnKey)}>
+    <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider cursor-pointer hover:text-primary transition-colors group" onClick={() => handleSort(columnKey)}>
         <div className="flex items-center gap-2">
             {title}
-            {sortConfig.key === columnKey && (
-                sortConfig.direction === 'ascending' ? <SortAscIcon className="h-4 w-4" /> : <SortDescIcon className="h-4 w-4" />
-            )}
+            <span className={`transition-opacity ${sortConfig.key === columnKey ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+                {sortConfig.key === columnKey && sortConfig.direction === 'ascending' ? <SortAscIcon className="h-4 w-4" /> : <SortDescIcon className="h-4 w-4" />}
+            </span>
         </div>
     </th>
   );
@@ -421,7 +433,6 @@ const SalesHistory = () => {
                         <td className="px-6 py-4">
                             <select name="paymentMethod" value={editingSale.paymentMethod} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50 text-sm">
                                 {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                                {/* Ensure user's custom method is preserved if not in list, though dropdown makes this tricky. For simplicity, custom text edit is not fully supported in quick edit row, defaults to Other if unknown */}
                             </select>
                         </td>
                         <td className="px-6 py-4"><input type="date" name="date" value={editingSale.date} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
@@ -479,7 +490,7 @@ const SalesHistory = () => {
       )}
 
       <div className="bg-surface rounded-xl shadow-subtle p-6 border border-border-color mt-8">
-        <h2 className="text-xl font-semibold mb-4">Recent Sales Activity (Last 7 Days)</h2>
+        <h2 className="text-xl font-semibold mb-4">Daily Performance (Last 7 Days)</h2>
         <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
