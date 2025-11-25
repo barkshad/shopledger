@@ -105,6 +105,8 @@ const Dashboard = () => {
     last7DaysChartData,
     recentActivity,
     shopHealthScore,
+    allTimeSalesCount,
+    allTimeRevenue
   } = useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -158,7 +160,11 @@ const Dashboard = () => {
         
     const shopHealthScore = calculateHealthScore(sales, expenses);
 
-    return { todaySales, weekSales, monthProfit, last7DaysChartData, recentActivity, shopHealthScore };
+    // Lifetime Stats (All existing data)
+    const allTimeSalesCount = sales.length;
+    const allTimeRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+
+    return { todaySales, weekSales, monthProfit, last7DaysChartData, recentActivity, shopHealthScore, allTimeSalesCount, allTimeRevenue };
   }, [sales, expenses]);
 
   const formatCurrency = (amount: number) => `${settings.currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -172,6 +178,30 @@ const Dashboard = () => {
       <motion.div variants={itemVariants} initial="hidden" animate="visible">
         <h1 className="text-3xl font-bold text-on-surface dark:text-dark-on-surface">Welcome back, Shadrack 👋</h1>
         <p className="text-subtle-text dark:text-dark-subtle-text mt-1">Here's your business snapshot.</p>
+      </motion.div>
+
+      {/* Lifetime Performance Card */}
+      <motion.div 
+        variants={itemVariants} 
+        initial="hidden" 
+        animate="visible" 
+        className="bg-gradient-to-r from-primary/90 to-blue-600 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4"
+      >
+        <div className="text-center sm:text-left">
+            <h2 className="text-lg font-medium opacity-90">Lifetime Performance</h2>
+            <p className="text-sm opacity-75">All-time sales overview</p>
+        </div>
+        <div className="flex gap-8 text-center">
+            <div>
+                <p className="text-3xl font-bold">{allTimeSalesCount.toLocaleString()}</p>
+                <p className="text-xs font-medium opacity-75 uppercase tracking-wider">Total Sales</p>
+            </div>
+            <div className="w-px bg-white/20"></div>
+            <div>
+                <p className="text-3xl font-bold">{formatCurrency(allTimeRevenue)}</p>
+                <p className="text-xs font-medium opacity-75 uppercase tracking-wider">Total Revenue</p>
+            </div>
+        </div>
       </motion.div>
       
       <motion.div 
