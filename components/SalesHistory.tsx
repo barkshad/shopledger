@@ -2,16 +2,16 @@
 import React, { useState, useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Sale } from '../types';
-import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, SortDescIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon, WalletIcon, FileTextIcon } from './icons';
+import { EditIcon, TrashIcon, SaveIcon, CancelIcon, DownloadIcon, SortAscIcon, SortDescIcon, PackageIcon, ChevronLeftIcon, ChevronRightIcon, FileTextIcon, SearchIcon, PlusCircleIcon, CalendarIcon } from './icons';
 import Spinner from './Spinner';
 import ConfirmationDialog from './ConfirmationDialog';
 import { convertToCSV, downloadCSV } from '../utils/csvUtils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import { useToast } from '../hooks/useToast';
+import { useNavigate } from 'react-router-dom';
 
 interface EditState extends Omit<Sale, 'id' | 'total'> {
     id: number;
@@ -19,15 +19,6 @@ interface EditState extends Omit<Sale, 'id' | 'total'> {
 }
 
 const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
-
-const SummaryStatCard: React.FC<{ title: string; value: string; }> = ({ title, value }) => (
-  <div className="bg-surface rounded-xl shadow-subtle p-4 border border-border-color">
-    <h3 className="text-sm font-medium text-subtle-text truncate">{title}</h3>
-    <p className="mt-1 text-2xl font-semibold text-on-surface">{value}</p>
-  </div>
-);
-
-type SortableKey = 'itemName' | 'total' | 'date' | 'paymentMethod';
 
 const getPaymentBadgeColor = (method: string | undefined) => {
     switch (method) {
@@ -39,28 +30,29 @@ const getPaymentBadgeColor = (method: string | undefined) => {
     }
 };
 
+type SortableKey = 'itemName' | 'total' | 'date' | 'paymentMethod';
+
 const SalesHistory = () => {
   const { sales, loading, updateSale, deleteSale } = useSales();
   const { settings } = useAdminSettings();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   
   const [editingSale, setEditingSale] = useState<EditState | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<number | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
 
+  // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [showWithPhotosOnly, setShowWithPhotosOnly] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKey, direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
   
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const openPhotoModal = (photoUrl: string) => {
     setSelectedPhoto(photoUrl);
@@ -83,30 +75,26 @@ const SalesHistory = () => {
 
         const matchesSearch = sale.itemName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDate = (!start || saleDate >= start) && (!end || saleDate <= end);
-        const matchesPhotoFilter = !showWithPhotosOnly || (showWithPhotosOnly && !!sale.photo);
         const matchesPayment = paymentFilter === 'All' || sale.paymentMethod === paymentFilter;
         
-        return matchesSearch && matchesDate && matchesPhotoFilter && matchesPayment;
+        return matchesSearch && matchesDate && matchesPayment;
     });
 
     if (sortConfig.key) {
         filtered.sort((a, b) => {
-            // Handle Date Sorting
-            if (sortConfig.key === 'date') {
-                const dateA = new Date(a.date).getTime();
-                const dateB = new Date(b.date).getTime();
-                return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
-            }
-
             const aValue = a[sortConfig.key];
             const bValue = b[sortConfig.key];
 
-            // Handle Numeric Sorting (Total, Price, Quantity)
+            if (sortConfig.key === 'date') {
+                return sortConfig.direction === 'ascending' 
+                    ? new Date(a.date).getTime() - new Date(b.date).getTime()
+                    : new Date(b.date).getTime() - new Date(a.date).getTime();
+            }
+
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
             }
 
-            // Handle String Sorting (Item Name, Payment Method) - Case Insensitive
             const strA = String(aValue || '').toLowerCase();
             const strB = String(bValue || '').toLowerCase();
 
@@ -117,76 +105,20 @@ const SalesHistory = () => {
     }
 
     return filtered;
-  }, [sales, searchTerm, startDate, endDate, sortConfig, showWithPhotosOnly, paymentFilter]);
+  }, [sales, searchTerm, startDate, endDate, sortConfig, paymentFilter]);
 
-  const summaryStats = useMemo(() => {
-    const totalSalesCount = filteredAndSortedSales.length;
-    if (totalSalesCount === 0) return { totalSales: 0, totalRevenue: 0, avgSale: 0, mostSoldItem: 'N/A' };
-    
-    const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.total, 0);
-    const avgSale = totalRevenue / totalSalesCount;
-
-    const itemCounts = filteredAndSortedSales.reduce((acc: Record<string, number>, s) => {
-        acc[s.itemName] = (acc[s.itemName] || 0) + s.quantity;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const mostSoldItem = Object.keys(itemCounts).length > 0
-        ? Object.entries(itemCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0][0]
-        : 'N/A';
-    
-    return { totalSales: totalSalesCount, totalRevenue, avgSale, mostSoldItem };
-  }, [filteredAndSortedSales]);
-  
-  const chartData = useMemo(() => {
-      // Use last 7 days relative to today for the chart
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          return d.toISOString().split('T')[0];
-      }).reverse();
-
-      const salesByDay = sales.reduce((acc, sale) => {
-          const dayKey = new Date(sale.date).toISOString().split('T')[0];
-          if (last7Days.includes(dayKey)) {
-              acc[dayKey] = (acc[dayKey] || 0) + sale.total;
-          }
-          return acc;
-      }, {} as Record<string, number>);
-
-      return last7Days.map(date => ({
-          name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-          sales: salesByDay[date] || 0,
-      }));
-  }, [sales]);
-
-  const totalPages = Math.ceil(filteredAndSortedSales.length / ITEMS_PER_PAGE);
-  const paginatedSales = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedSales.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredAndSortedSales, currentPage]);
-  
-  const handleSort = (key: SortableKey) => {
-    setCurrentPage(1);
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending'
-    }));
-  };
-  
   const handleEditClick = (sale: Sale) => {
     if (sale.id !== undefined) {
       const { total, ...saleData } = sale;
       setEditingSale({
         ...saleData,
         id: sale.id,
-        paymentMethod: sale.paymentMethod || 'Cash', // Fallback for old records
+        paymentMethod: sale.paymentMethod || 'Cash',
         date: sale.date.split('T')[0],
       });
     }
   };
-  const handleCancelEdit = () => setEditingSale(null);
-  
+
   const handleUpdateSale = async () => {
     if (!editingSale) return;
     const { id, itemName, quantity, price, date, photo, notes, paymentMethod } = editingSale;
@@ -202,6 +134,7 @@ const SalesHistory = () => {
       notes: notes,
     });
     setEditingSale(null);
+    addToast("Sale updated successfully", "success");
   };
   
   const handleDeleteClick = (id: number) => {
@@ -213,46 +146,16 @@ const SalesHistory = () => {
     if (saleToDelete !== null) {
       await deleteSale(saleToDelete);
       setSaleToDelete(null);
+      addToast("Sale deleted", "success");
     }
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (editingSale) setEditingSale({ ...editingSale, [e.target.name]: e.target.value });
-  };
-  
-  const handleEditPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editingSale) return;
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditingSale({ ...editingSale, photo: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeEditPhoto = () => {
-    if (editingSale) {
-      setEditingSale({ ...editingSale, photo: undefined });
-    }
-  };
-
-  const handleDownloadReport = () => {
-    setIsExporting(true);
-    const csvData = convertToCSV(filteredAndSortedSales.map(({photo, ...rest}) => rest));
-    downloadCSV(csvData, `sales_report_${new Date().toISOString().split('T')[0]}.csv`);
-    setTimeout(() => setIsExporting(false), 1000);
   };
 
   const handleExportPDF = () => {
       setIsPdfExporting(true);
       try {
           const doc = new jsPDF();
-          
           doc.setFontSize(18);
           doc.text('Sales Report', 14, 22);
-          
           doc.setFontSize(11);
           doc.setTextColor(100);
           doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
@@ -261,15 +164,14 @@ const SalesHistory = () => {
           const tableRows: any[] = [];
 
           filteredAndSortedSales.forEach(sale => {
-              const saleData = [
+              tableRows.push([
                   sale.itemName,
                   sale.quantity,
                   `${settings.currency} ${sale.price.toFixed(2)}`,
                   `${settings.currency} ${sale.total.toFixed(2)}`,
                   sale.paymentMethod || "Cash",
                   new Date(sale.date).toLocaleDateString(),
-              ];
-              tableRows.push(saleData);
+              ]);
           });
 
           autoTable(doc, {
@@ -280,17 +182,17 @@ const SalesHistory = () => {
               headStyles: { fillColor: [78, 168, 255] },
           });
 
+          const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.total, 0);
           const finalY = (doc as any).lastAutoTable.finalY || 35;
           
           doc.setFontSize(12);
           doc.setTextColor(0);
-          doc.text(`Total Sales Count: ${summaryStats.totalSales}`, 14, finalY + 10);
-          doc.text(`Grand Total: ${settings.currency} ${summaryStats.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 14, finalY + 16);
+          doc.text(`Total Sales: ${filteredAndSortedSales.length}`, 14, finalY + 10);
+          doc.text(`Grand Total: ${settings.currency} ${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 14, finalY + 16);
 
           doc.save(`Sales_Report_${new Date().toISOString().split('T')[0]}.pdf`);
           addToast("PDF Export Successful", "success");
       } catch (e) {
-          console.error(e);
           addToast("Failed to export PDF", "error");
       } finally {
           setIsPdfExporting(false);
@@ -298,18 +200,10 @@ const SalesHistory = () => {
   };
 
   const formatCurrency = (amount: number) => `${settings.currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
-
-  const SortableHeader: React.FC<{ columnKey: SortableKey, title: string }> = ({ columnKey, title }) => (
-    <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider cursor-pointer hover:text-primary transition-colors group" onClick={() => handleSort(columnKey)}>
-        <div className="flex items-center gap-2">
-            {title}
-            <span className={`transition-opacity ${sortConfig.key === columnKey ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
-                {sortConfig.key === columnKey && sortConfig.direction === 'ascending' ? <SortAscIcon className="h-4 w-4" /> : <SortDescIcon className="h-4 w-4" />}
-            </span>
-        </div>
-    </th>
-  );
+  const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   if (loading) return <Spinner />;
 
@@ -320,16 +214,17 @@ const SalesHistory = () => {
         onClose={() => setDialogOpen(false)}
         onConfirm={confirmDelete}
         title="Delete Sale"
-        message="Are you sure you want to delete this sale record? This action cannot be undone."
+        message="Are you sure you want to delete this sale? This cannot be undone."
         confirmText="Delete"
     />
+
     <AnimatePresence>
       {isPhotoModalOpen && selectedPhoto && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4"
           onClick={closePhotoModal}
         >
           <motion.img
@@ -337,174 +232,212 @@ const SalesHistory = () => {
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}
             src={selectedPhoto}
-            alt="Full size product"
-            className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+            className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
         </motion.div>
       )}
     </AnimatePresence>
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Sales History & Analysis</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <SummaryStatCard title="Total Sales" value={summaryStats.totalSales.toLocaleString()} />
-          <SummaryStatCard title="Total Revenue" value={formatCurrency(summaryStats.totalRevenue)} />
-          <SummaryStatCard title="Average Sale Value" value={formatCurrency(summaryStats.avgSale)} />
-          <SummaryStatCard title="Most Sold Item" value={summaryStats.mostSoldItem} />
-      </div>
+    <div className="relative pb-24 min-h-[80vh]">
+        {/* Modern Toolbar */}
+        <div className="sticky top-16 md:top-0 z-30 bg-surface/90 dark:bg-dark-surface/90 backdrop-blur-lg border-b border-border-color dark:border-dark-border-color -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 mb-6 flex items-center justify-between shadow-sm transition-all">
+            <h1 className="text-2xl font-bold text-on-surface dark:text-dark-on-surface">Sales</h1>
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={() => setShowFilters(!showFilters)} 
+                    className={`p-2 rounded-full transition-colors ${showFilters ? 'bg-primary/10 text-primary' : 'text-subtle-text hover:bg-background'}`}
+                >
+                    <SearchIcon className="h-5 w-5" />
+                </button>
+                <button 
+                    onClick={handleExportPDF} 
+                    disabled={isPdfExporting}
+                    className="p-2 rounded-full text-subtle-text hover:text-primary hover:bg-background disabled:opacity-50"
+                >
+                    {isPdfExporting ? <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"/> : <FileTextIcon className="h-5 w-5" />}
+                </button>
+            </div>
+        </div>
 
-      <div className="bg-surface p-4 rounded-xl shadow-subtle border border-border-color flex flex-col md:flex-row gap-4 items-center flex-wrap">
-          <input
-            type="text"
-            placeholder="Search by item name..."
-            value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full md:w-auto md:flex-1 px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-          <select 
-            value={paymentFilter} 
-            onChange={e => {setPaymentFilter(e.target.value); setCurrentPage(1)}} 
-            className="w-full md:w-auto px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="All">All Methods</option>
-            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <div className="flex items-center gap-2 w-full md:w-auto">
-              <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
-              <span className="text-subtle-text">-</span>
-              <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
-          </div>
-          <div className="flex items-center">
-              <input id="photo-filter" type="checkbox" checked={showWithPhotosOnly} onChange={(e) => { setShowWithPhotosOnly(e.target.checked); setCurrentPage(1); }} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"/>
-              <label htmlFor="photo-filter" className="ml-2 block text-sm text-on-surface">Photos only</label>
-          </div>
-          <button
-            onClick={handleExportPDF}
-            disabled={isPdfExporting}
-            className="w-full md:w-auto bg-red-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
-          >
-              {isPdfExporting ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <FileTextIcon className="h-5 w-5" />}
-              {isPdfExporting ? 'Exporting...' : 'Export Sales (PDF)'}
-          </button>
-          <button
-            onClick={handleDownloadReport}
-            disabled={isExporting}
-            className="w-full md:w-auto bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
-          >
-              {isExporting ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <DownloadIcon className="h-5 w-5" />}
-              {isExporting ? 'Exporting...' : 'Export (CSV)'}
-          </button>
-      </div>
+        {/* Collapsible Filters */}
+        <AnimatePresence>
+            {showFilters && (
+                <motion.div 
+                    initial={{ height: 0, opacity: 0 }} 
+                    animate={{ height: 'auto', opacity: 1 }} 
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden mb-6"
+                >
+                    <div className="bg-surface dark:bg-dark-surface p-4 rounded-xl border border-border-color grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Search items..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="px-4 py-2 rounded-lg bg-background border border-border-color focus:ring-2 focus:ring-primary focus:outline-none"
+                        />
+                        <select 
+                            value={paymentFilter} 
+                            onChange={e => setPaymentFilter(e.target.value)} 
+                            className="px-4 py-2 rounded-lg bg-background border border-border-color focus:ring-2 focus:ring-primary focus:outline-none"
+                        >
+                            <option value="All">All Payments</option>
+                            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        <div className="flex items-center gap-2">
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none"/>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none"/>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
-      <div className="bg-surface rounded-xl shadow-subtle border border-border-color overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border-color">
-            <thead className="bg-background/80">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Photo</th>
-                <SortableHeader columnKey="itemName" title="Item"/>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Qty</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Price</th>
-                <SortableHeader columnKey="total" title="Total"/>
-                <SortableHeader columnKey="paymentMethod" title="Payment"/>
-                <SortableHeader columnKey="date" title="Date"/>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-surface divide-y divide-border-color">
-              {paginatedSales.map((sale) => (
-                editingSale?.id === sale.id ? (
-                    <tr key={sale.id} className="bg-primary/5">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                                {editingSale.photo ? <img src={editingSale.photo} alt="preview" className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-background flex items-center justify-center"><PackageIcon className="h-6 w-6 text-subtle-text"/></div>}
+        {/* Sales List - Card View */}
+        {filteredAndSortedSales.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
+                <div className="bg-surface dark:bg-dark-surface p-6 rounded-full mb-4">
+                    <FileTextIcon className="h-12 w-12 text-subtle-text" />
+                </div>
+                <h3 className="text-xl font-medium">No sales found</h3>
+                <p className="text-sm text-subtle-text mt-1">Try adjusting your filters or add a new sale.</p>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredAndSortedSales.map((sale) => (
+                    <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={sale.id}
+                        className="bg-surface dark:bg-dark-surface rounded-2xl p-4 shadow-sm border border-border-color dark:border-dark-border-color hover:shadow-md transition-shadow relative overflow-hidden"
+                    >
+                        {editingSale?.id === sale.id ? (
+                            /* Edit Mode */
+                            <div className="space-y-3 relative z-10">
+                                <h3 className="font-bold text-lg text-primary">Editing Sale</h3>
                                 <div>
-                                    <input type="file" id={`edit-photo-${sale.id}`} className="hidden" onChange={handleEditPhotoChange} accept="image/*" />
-                                    <label htmlFor={`edit-photo-${sale.id}`} className="text-xs text-primary hover:underline cursor-pointer">Change</label>
-                                    {editingSale.photo && <button onClick={removeEditPhoto} className="text-xs text-red-500 hover:underline ml-2">Remove</button>}
+                                    <label className="text-xs text-subtle-text uppercase">Item Name</label>
+                                    <input 
+                                        value={editingSale.itemName} 
+                                        onChange={e => setEditingSale({...editingSale, itemName: e.target.value})}
+                                        className="w-full p-2 rounded-lg bg-background border border-border-color focus:ring-2 focus:ring-primary outline-none"
+                                    />
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="flex-1">
+                                        <label className="text-xs text-subtle-text uppercase">Qty</label>
+                                        <input 
+                                            type="number"
+                                            value={editingSale.quantity} 
+                                            onChange={e => setEditingSale({...editingSale, quantity: Number(e.target.value)})}
+                                            className="w-full p-2 rounded-lg bg-background border border-border-color outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-subtle-text uppercase">Price</label>
+                                        <input 
+                                            type="number"
+                                            value={editingSale.price} 
+                                            onChange={e => setEditingSale({...editingSale, price: Number(e.target.value)})}
+                                            className="w-full p-2 rounded-lg bg-background border border-border-color outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-subtle-text uppercase">Payment</label>
+                                    <select 
+                                        value={editingSale.paymentMethod} 
+                                        onChange={e => setEditingSale({...editingSale, paymentMethod: e.target.value})}
+                                        className="w-full p-2 rounded-lg bg-background border border-border-color outline-none"
+                                    >
+                                        {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <button onClick={handleUpdateSale} className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium flex justify-center items-center gap-2"><SaveIcon className="h-4 w-4"/> Save</button>
+                                    <button onClick={() => setEditingSale(null)} className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-medium flex justify-center items-center gap-2"><CancelIcon className="h-4 w-4"/> Cancel</button>
                                 </div>
                             </div>
-                        </td>
-                        <td className="px-6 py-4"><input type="text" name="itemName" value={editingSale.itemName} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
-                        <td className="px-6 py-4"><input type="number" name="quantity" value={editingSale.quantity} onChange={handleEditChange} className="w-20 p-1 border rounded bg-surface border-primary/50"/></td>
-                        <td className="px-6 py-4"><input type="number" name="price" value={editingSale.price} onChange={handleEditChange} className="w-24 p-1 border rounded bg-surface border-primary/50"/></td>
-                        <td className="px-6 py-4 font-medium">{formatCurrency(editingSale.quantity * editingSale.price)}</td>
-                        <td className="px-6 py-4">
-                            <select name="paymentMethod" value={editingSale.paymentMethod} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50 text-sm">
-                                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                            </select>
-                        </td>
-                        <td className="px-6 py-4"><input type="date" name="date" value={editingSale.date} onChange={handleEditChange} className="w-full p-1 border rounded bg-surface border-primary/50"/></td>
-                        <td className="px-6 py-4">
-                            <div className="flex items-center space-x-2">
-                                <button onClick={handleUpdateSale} className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100"><SaveIcon className="h-5 w-5"/></button>
-                                <button onClick={handleCancelEdit} className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200"><CancelIcon className="h-5 w-5"/></button>
-                            </div>
-                        </td>
-                    </tr>
-                ) : (
-                    <tr key={sale.id} className="even:bg-background/50 hover:bg-primary/5 transition-colors group">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            {sale.photo ? <img src={sale.photo} alt={sale.itemName} className="h-10 w-10 rounded-md object-cover cursor-pointer hover:scale-110 transition-transform" onClick={() => sale.photo && openPhotoModal(sale.photo)} /> : <div className="h-10 w-10 rounded-md bg-background flex items-center justify-center"><PackageIcon className="h-6 w-6 text-subtle-text"/></div>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-on-surface">{sale.itemName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{sale.quantity}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatCurrency(sale.price)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text font-semibold">{formatCurrency(sale.total)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentBadgeColor(sale.paymentMethod || 'Cash')}`}>
-                                {sale.paymentMethod || 'Cash'}
-                            </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatDate(sale.date)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center space-x-2">
-                                <button onClick={() => handleEditClick(sale)} className="text-primary hover:text-blue-700 p-2 rounded-full hover:bg-primary/10"><EditIcon className="h-5 w-5"/></button>
-                                <button onClick={() => sale.id && handleDeleteClick(sale.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100"><TrashIcon className="h-5 w-5"/></button>
-                            </div>
-                        </td>
-                    </tr>
-                )
-              ))}
-            </tbody>
-          </table>
-          {filteredAndSortedSales.length === 0 && (
-            <div className="text-center p-10 text-subtle-text">
-                {sales.length === 0 ? "You haven't recorded any sales yet." : "No sales match the current filters."}
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-color rounded-lg text-sm font-semibold hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed">
-            <ChevronLeftIcon className="h-4 w-4"/> Previous
-          </button>
-          <span className="text-sm text-subtle-text">Page {currentPage} of {totalPages}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-color rounded-lg text-sm font-semibold hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed">
-            Next <ChevronRightIcon className="h-4 w-4"/>
-          </button>
-        </div>
-      )}
+                        ) : (
+                            /* View Mode */
+                            <div className="flex flex-col h-full justify-between">
+                                <div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex gap-3 items-center">
+                                            <div 
+                                                className="w-12 h-12 rounded-xl bg-background flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer border border-border-color"
+                                                onClick={() => sale.photo && openPhotoModal(sale.photo)}
+                                            >
+                                                {sale.photo ? (
+                                                    <img src={sale.photo} alt={sale.itemName} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <PackageIcon className="h-6 w-6 text-subtle-text/50" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-on-surface leading-tight line-clamp-1">{sale.itemName}</h3>
+                                                <div className="text-sm text-subtle-text mt-0.5 flex items-center gap-1">
+                                                   <span>{sale.quantity}</span>
+                                                   <span className="text-xs">x</span>
+                                                   <span>{formatCurrency(sale.price)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-lg font-bold text-primary">{formatCurrency(sale.total)}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mt-4 flex items-center justify-between text-xs text-subtle-text">
+                                        <div className="flex items-center gap-1.5">
+                                            <CalendarIcon className="h-3.5 w-3.5" />
+                                            <span>{formatDate(sale.date)}</span>
+                                        </div>
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getPaymentBadgeColor(sale.paymentMethod || 'Cash')}`}>
+                                            {sale.paymentMethod || 'Cash'}
+                                        </span>
+                                    </div>
+                                </div>
 
-      <div className="bg-surface rounded-xl shadow-subtle p-6 border border-border-color mt-8">
-        <h2 className="text-xl font-semibold mb-4">Daily Performance (Last 7 Days)</h2>
-        <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(value) => `KSh ${value}`} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(4px)', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}
-                  formatter={(value: number) => [formatCurrency(value), 'Sales']}
-                  cursor={{ stroke: '#3B82F6', strokeDasharray: '3 3' }}/>
-                <Line type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={2} dot={{r: 4}} activeDot={{r: 8}}/>
-            </LineChart>
-        </ResponsiveContainer>
-      </div>
+                                {/* Card Actions */}
+                                <div className="border-t border-border-color dark:border-dark-border-color mt-4 pt-3 flex justify-end gap-1">
+                                    <button 
+                                        onClick={() => handleEditClick(sale)} 
+                                        className="p-2 rounded-lg text-subtle-text hover:text-primary hover:bg-primary/5 transition-colors"
+                                    >
+                                        <EditIcon className="h-5 w-5" />
+                                    </button>
+                                    <button 
+                                        onClick={() => sale.id && handleDeleteClick(sale.id)} 
+                                        className="p-2 rounded-lg text-subtle-text hover:text-red-500 hover:bg-red-500/5 transition-colors"
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                ))}
+            </div>
+        )}
     </div>
+
+    {/* Dedicated FAB for Add Sale */}
+    <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => navigate('/add-sale')}
+        className="fixed bottom-24 right-4 z-40 bg-primary text-white p-4 rounded-2xl shadow-lg shadow-primary/30 flex items-center gap-2 md:hidden"
+    >
+        <PlusCircleIcon className="h-6 w-6" />
+        <span className="font-bold">New Sale</span>
+    </motion.button>
     </>
   );
 };
