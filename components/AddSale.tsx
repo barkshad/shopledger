@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
-import { SaveIcon, PackageIcon, CreditCardIcon, DollarSignIcon, ListIcon } from './icons';
+import { SaveIcon, PackageIcon, CreditCardIcon, DollarSignIcon, ListIcon, CalendarIcon } from './icons';
 
 const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
 
@@ -16,6 +16,7 @@ const AddSale = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [price, setPrice] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,19 +31,33 @@ const AddSale = () => {
 
     setIsSubmitting(true);
     try {
+      // Create a date object from the input value, defaulting to current time for sorting accuracy if today
+      const selectedDate = new Date(date);
+      const now = new Date();
+      
+      // If selected date is today, keep current time. Otherwise, default to end of day or specific time logic
+      // For simplicity, we just use the selected date string which defaults to UTC midnight or local depending on parsing
+      // To ensure consistency, let's just use the ISO string of the date component combined with current time if it's today,
+      // or just the date if it's in the past/future.
+      
+      let finalDate = new Date(date).toISOString();
+      if (date === now.toISOString().split('T')[0]) {
+          finalDate = now.toISOString();
+      }
+
       // The useSales hook handles the total calculation and ID generation
       await addSale({
         itemName: itemName.trim(),
         quantity: Number(quantity),
         price: numericPrice,
         paymentMethod,
-        date: new Date().toISOString(),
+        date: finalDate,
         // Optional fields can be left undefined or defaults
       });
       
       addToast('Sale recorded successfully!', 'success');
       
-      // Reset form
+      // Reset form (keep date as is or reset to today? usually keeping is better for batch entry)
       setItemName('');
       setQuantity(1);
       setPrice('');
@@ -114,6 +129,21 @@ const AddSale = () => {
                             required
                         />
                     </div>
+                </div>
+            </div>
+
+            {/* Date Selection */}
+            <div>
+                <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Date</label>
+                <div className="relative">
+                    <CalendarIcon className="absolute left-3 top-3 h-5 w-5 text-subtle-text" />
+                    <input 
+                        type="date" 
+                        value={date} 
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface"
+                        required
+                    />
                 </div>
             </div>
 
