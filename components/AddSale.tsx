@@ -13,8 +13,9 @@ const AddSale = () => {
   const { settings } = useAdminSettings();
 
   const [itemName, setItemName] = useState('');
-  const [quantity, setQuantity] = useState<number>(1);
-  const [price, setPrice] = useState<number | ''>('');
+  // Changed quantity and price to strings to allow typing decimals (e.g., "10." or "0.5") without React resetting the input
+  const [quantity, setQuantity] = useState<string>('1');
+  const [price, setPrice] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,9 +23,10 @@ const AddSale = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const numericPrice = Number(price);
+    const numericPrice = parseFloat(price);
+    const numericQuantity = parseFloat(quantity);
     
-    if (!itemName.trim() || quantity <= 0 || numericPrice < 0 || price === '') {
+    if (!itemName.trim() || isNaN(numericQuantity) || numericQuantity <= 0 || isNaN(numericPrice) || numericPrice < 0) {
       addToast('Please fill in valid details.', 'error');
       return;
     }
@@ -32,13 +34,7 @@ const AddSale = () => {
     setIsSubmitting(true);
     try {
       // Create a date object from the input value, defaulting to current time for sorting accuracy if today
-      const selectedDate = new Date(date);
       const now = new Date();
-      
-      // If selected date is today, keep current time. Otherwise, default to end of day or specific time logic
-      // For simplicity, we just use the selected date string which defaults to UTC midnight or local depending on parsing
-      // To ensure consistency, let's just use the ISO string of the date component combined with current time if it's today,
-      // or just the date if it's in the past/future.
       
       let finalDate = new Date(date).toISOString();
       if (date === now.toISOString().split('T')[0]) {
@@ -48,7 +44,7 @@ const AddSale = () => {
       // The useSales hook handles the total calculation and ID generation
       await addSale({
         itemName: itemName.trim(),
-        quantity: Number(quantity),
+        quantity: numericQuantity,
         price: numericPrice,
         paymentMethod,
         date: finalDate,
@@ -57,9 +53,9 @@ const AddSale = () => {
       
       addToast('Sale recorded successfully!', 'success');
       
-      // Reset form (keep date as is or reset to today? usually keeping is better for batch entry)
+      // Reset form
       setItemName('');
-      setQuantity(1);
+      setQuantity('1');
       setPrice('');
       setPaymentMethod('Cash');
     } catch (error) {
@@ -70,7 +66,7 @@ const AddSale = () => {
     }
   };
 
-  const currentTotal = (Number(quantity) || 0) * (Number(price) || 0);
+  const currentTotal = (parseFloat(quantity) || 0) * (parseFloat(price) || 0);
 
   return (
     <div className="max-w-xl mx-auto space-y-6 pb-20">
@@ -103,7 +99,7 @@ const AddSale = () => {
                         <input 
                             type="number" 
                             value={quantity} 
-                            onChange={(e) => setQuantity(parseFloat(e.target.value))}
+                            onChange={(e) => setQuantity(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface"
                             placeholder="1"
                             min="0.1"
@@ -121,7 +117,7 @@ const AddSale = () => {
                         <input 
                             type="number" 
                             value={price} 
-                            onChange={(e) => setPrice(parseFloat(e.target.value))}
+                            onChange={(e) => setPrice(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface"
                             placeholder="0.00"
                             min="0"
@@ -171,7 +167,7 @@ const AddSale = () => {
             {/* Total Display */}
             <div className="bg-background/50 dark:bg-dark-background/50 p-4 rounded-xl flex justify-between items-center border border-border-color dark:border-dark-border-color">
                 <span className="text-subtle-text dark:text-dark-subtle-text font-medium">Total Amount</span>
-                <span className="text-2xl font-bold text-primary">{settings.currency} {currentTotal.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-primary">{settings.currency} {currentTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
 
             {/* Submit Button */}
