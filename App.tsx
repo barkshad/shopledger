@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -19,6 +18,7 @@ import Statistics from './components/Statistics';
 import SearchResults from './components/SearchResults';
 import ProductManagement from './components/ProductManagement';
 import CustomerManagement from './components/CustomerManagement';
+import AIAssistant from './components/AIAssistant';
 
 function App() {
   const location = useLocation();
@@ -32,7 +32,7 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const fabPaths = ['/', '/history', '/expenses', '/products', '/customers'];
+  const fabPaths = ['/', '/history', '/expenses', '/products', '/customers', '/ai-assistant'];
   const showFab = fabPaths.includes(location.pathname);
 
   return (
@@ -63,6 +63,7 @@ function App() {
                   <Route path="/statistics" element={<AnimatedPage><Statistics /></AnimatedPage>} />
                   <Route path="/admin" element={<AnimatedPage><AdminPanel /></AnimatedPage>} />
                   <Route path="/search" element={<AnimatedPage><SearchResults /></AnimatedPage>} />
+                  <Route path="/ai-assistant" element={<AnimatedPage><AIAssistant /></AnimatedPage>} />
                 </Routes>
               </AnimatePresence>
             </main>
