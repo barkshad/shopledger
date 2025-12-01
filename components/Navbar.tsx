@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon, PackageIcon, ShoppingCartIcon, SparklesIcon } from './icons';
+import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon, PackageIcon, ShoppingCartIcon } from './icons';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
@@ -70,7 +71,6 @@ const Navbar = () => {
                              <NavItem to="/customers" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Customers</span></NavItem>
                             <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>Sales History</span></NavItem>
                             <NavItem to="/expenses" onClick={closeMenu}><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
-                            <NavItem to="/ai-assistant" onClick={closeMenu}><SparklesIcon className="h-5 w-5"/><span>Smart Assistant</span></NavItem>
                             <NavItem to="/admin" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                         </nav>
                     </motion.div>
