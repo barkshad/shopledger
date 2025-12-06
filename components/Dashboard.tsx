@@ -28,6 +28,8 @@ import {
 } from './icons';
 import { calculateHealthScore } from '../utils/statsUtils';
 
+const MotionDiv = motion.div as any;
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -175,13 +177,13 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
-      <motion.div variants={itemVariants} initial="hidden" animate="visible">
+      <MotionDiv variants={itemVariants} initial="hidden" animate="visible">
         <h1 className="text-3xl font-bold text-on-surface dark:text-dark-on-surface">Welcome back, Shadrack 👋</h1>
         <p className="text-subtle-text dark:text-dark-subtle-text mt-1">Here's your business snapshot.</p>
-      </motion.div>
+      </MotionDiv>
 
       {/* Lifetime Performance Card */}
-      <motion.div 
+      <MotionDiv 
         variants={itemVariants} 
         initial="hidden" 
         animate="visible" 
@@ -202,9 +204,9 @@ const Dashboard = () => {
                 <p className="text-xs font-medium opacity-75 uppercase tracking-wider">Total Revenue</p>
             </div>
         </div>
-      </motion.div>
+      </MotionDiv>
       
-      <motion.div 
+      <MotionDiv 
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
         variants={containerVariants}
         initial="hidden"
@@ -213,10 +215,10 @@ const Dashboard = () => {
         <StatCard title="Today's Sales" value={formatCurrency(todaySales)} icon={<ShoppingBasketIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#4EA8FF" />
         <StatCard title="This Week's Sales" value={formatCurrency(weekSales)} icon={<TrendingUpIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#34D399" />
         <StatCard title="This Month's Profit" value={formatCurrency(monthProfit)} icon={<WalletIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#F472B6" />
-      </motion.div>
+      </MotionDiv>
 
        {lowStockProducts.length > 0 && (
-            <motion.div variants={itemVariants} initial="hidden" animate="visible" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-start gap-4">
+            <MotionDiv variants={itemVariants} initial="hidden" animate="visible" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-start gap-4">
                 <AlertTriangleIcon className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
                 <div>
                     <h3 className="font-bold text-red-700 dark:text-red-300">Low Stock Alert</h3>
@@ -229,11 +231,11 @@ const Dashboard = () => {
                     </ul>
                     <Link to="/products" className="text-xs font-bold text-red-700 dark:text-red-300 underline mt-2 block">Manage Inventory &rarr;</Link>
                 </div>
-            </motion.div>
+            </MotionDiv>
        )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-1 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color flex flex-col items-center justify-center text-center">
+          <MotionDiv variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-1 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color flex flex-col items-center justify-center text-center">
               <h2 className="text-xl font-bold mb-2 flex items-center gap-2"><GaugeIcon /> Shop Health Score</h2>
               <p className="text-subtle-text dark:text-dark-subtle-text text-sm mb-4">An overview of your business performance.</p>
               <HealthScoreGuage score={shopHealthScore.score} />
@@ -241,8 +243,8 @@ const Dashboard = () => {
                <button onClick={() => navigate('/statistics')} className="mt-4 w-full bg-primary/10 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
                   View Full Statistics <StatsIcon className="w-5 h-5" />
                </button>
-          </motion.div>
-          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-2 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
+          </MotionDiv>
+          <MotionDiv variants={itemVariants} initial="hidden" animate="visible" className="lg:col-span-2 bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
               <h2 className="text-xl font-bold mb-4">Weekly Performance</h2>
               <ResponsiveContainer width="100%" height={250}>
                   <AreaChart data={last7DaysChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
@@ -260,10 +262,10 @@ const Dashboard = () => {
                   <Area type="monotone" dataKey="sales" stroke="#4EA8FF" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
                   </AreaChart>
               </ResponsiveContainer>
-          </motion.div>
+          </MotionDiv>
       </div>
 
-      <motion.div variants={itemVariants} initial="hidden" animate="visible" className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
+      <MotionDiv variants={itemVariants} initial="hidden" animate="visible" className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color">
           <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
           {recentActivity.length > 0 ? (
               <div className="space-y-4">
@@ -296,7 +298,7 @@ const Dashboard = () => {
           ) : (
               <p className="text-subtle-text dark:text-dark-subtle-text text-sm text-center py-4">No activity recorded yet.</p>
           )}
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

@@ -13,6 +13,9 @@ import {
 } from './icons';
 import { Sale } from '../types';
 
+const MotionDiv = motion.div as any;
+const MotionCircle = motion.circle as any;
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -27,12 +30,12 @@ const itemVariants = {
 };
 
 const StatInsightCard: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => (
-    <motion.div
+    <MotionDiv
         variants={itemVariants}
         className={`bg-surface/70 dark:bg-dark-surface/70 backdrop-blur-md rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color ${className}`}
     >
         {children}
-    </motion.div>
+    </MotionDiv>
 );
 
 const TrendDisplay: React.FC<{ title: string, current: number, change: number, currency: string }> = ({ title, current, change, currency }) => (
@@ -59,7 +62,7 @@ const HealthScoreGuage: React.FC<{ score: number, status: string }> = ({ score, 
             <div className="relative w-40 h-40">
                 <svg className="w-full h-full" viewBox="0 0 120 120">
                     <circle className="text-border-color dark:text-dark-border-color" strokeWidth="10" stroke="currentColor" fill="transparent" r="52" cx="60" cy="60" />
-                    <motion.circle
+                    <MotionCircle
                         className={colorClass}
                         strokeWidth="10"
                         strokeDasharray={circumference}
@@ -130,7 +133,7 @@ const Statistics = () => {
   const PIE_COLORS = ['#4EA8FF', '#34D399', '#F472B6', '#FBBF24', '#A78BFA', '#60A5FA'];
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
+    <MotionDiv variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
         <h1 className="text-4xl font-bold text-on-surface dark:text-dark-on-surface">Statistics & Insights</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -250,7 +253,7 @@ const Statistics = () => {
             </StatInsightCard>
         </div>
         
-    </motion.div>
+    </MotionDiv>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -11,9 +12,11 @@ interface AnimatedPageProps {
   children: React.ReactNode;
 }
 
+const MotionDiv = motion.div as any;
+
 const AnimatedPage: React.FC<AnimatedPageProps> = ({ children }) => {
   return (
-    <motion.div
+    <MotionDiv
       variants={animations}
       initial="initial"
       animate="animate"
@@ -21,7 +24,7 @@ const AnimatedPage: React.FC<AnimatedPageProps> = ({ children }) => {
       transition={{ duration: 0.25 }}
     >
       {children}
-    </motion.div>
+    </MotionDiv>
   );
 };
 

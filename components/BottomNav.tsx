@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { DashboardIcon, HistoryIcon, ListIcon, UsersIcon, StatsIcon } from './icons';
+import { DashboardIcon, HistoryIcon, ListIcon, UsersIcon, StatsIcon, CalendarIcon } from './icons';
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => (
   <NavLink
@@ -23,6 +23,7 @@ const BottomNav = () => {
       <nav className="flex items-center justify-around h-full">
         <NavItem to="/" icon={<DashboardIcon className="h-6 w-6" />} label="Home" />
         <NavItem to="/history" icon={<HistoryIcon className="h-6 w-6" />} label="Sales" />
+        <NavItem to="/weekly" icon={<CalendarIcon className="h-6 w-6" />} label="Weekly" />
         <NavItem to="/statistics" icon={<StatsIcon className="h-6 w-6" />} label="Stats" />
         <NavItem to="/expenses" icon={<ListIcon className="h-6 w-6" />} label="Exp" />
       </nav>

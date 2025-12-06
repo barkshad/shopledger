@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,6 +11,8 @@ interface ActivityLogProps {
   logs: Log[];
 }
 
+const MotionLi = motion.li as any;
+
 const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
   return (
     <div className="mt-8">
@@ -21,7 +24,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
           <ul className="space-y-3">
             <AnimatePresence initial={false}>
               {logs.map((log, index) => (
-                <motion.li
+                <MotionLi
                   key={log.timestamp.toISOString() + index}
                   layout
                   initial={{ opacity: 0, y: -10 }}
@@ -32,7 +35,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
                 >
                   <span>{log.message}</span>
                   <span className="text-xs flex-shrink-0 ml-4">{log.timestamp.toLocaleTimeString()}</span>
-                </motion.li>
+                </MotionLi>
               ))}
             </AnimatePresence>
           </ul>

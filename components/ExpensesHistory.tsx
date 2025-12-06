@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { Expense } from '../types';
@@ -14,6 +15,9 @@ interface EditState extends Omit<Expense, 'id'> {
     id: number;
     receiptPhoto?: string;
 }
+
+const MotionDiv = motion.div as any;
+const MotionImg = motion.img as any;
 
 const SummaryStatCard: React.FC<{ title: string; value: string; }> = ({ title, value }) => (
   <div className="bg-surface rounded-xl shadow-subtle p-4 border border-border-color">
@@ -172,9 +176,9 @@ const ExpensesHistory = () => {
     <ConfirmationDialog isOpen={dialogOpen} onClose={() => setDialogOpen(false)} onConfirm={confirmDelete} title="Delete Expense" message="Are you sure you want to delete this expense record? This action cannot be undone." confirmText="Delete" />
     <AnimatePresence>
       {isPhotoModalOpen && selectedPhoto && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" onClick={closePhotoModal}>
-          <motion.img initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} src={selectedPhoto} alt="Full size receipt" className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
-        </motion.div>
+        <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" onClick={closePhotoModal}>
+          <MotionImg initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} src={selectedPhoto} alt="Full size receipt" className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onClick={(e: React.MouseEvent<HTMLImageElement>) => e.stopPropagation()} />
+        </MotionDiv>
       )}
     </AnimatePresence>
     <div className="space-y-8">

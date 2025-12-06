@@ -3,9 +3,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCartIcon } from './icons';
 
+const MotionDiv = motion.div as any;
+const MotionH1 = motion.h1 as any;
+const MotionP = motion.p as any;
+
 const SplashScreen = () => {
   return (
-    <motion.div
+    <MotionDiv
       key="splash"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -22,7 +26,7 @@ const SplashScreen = () => {
 
       <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10 px-4">
         {/* Logo Animation */}
-        <motion.div
+        <MotionDiv
           initial={{ scale: 0.8, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -33,47 +37,47 @@ const SplashScreen = () => {
           </div>
           {/* Decorative Ring */}
           <div className="absolute inset-0 border-2 border-primary/20 rounded-2xl transform rotate-6 -z-10" />
-        </motion.div>
+        </MotionDiv>
 
         {/* Text Animation */}
         <div className="text-center space-y-2">
-            <motion.h1
+            <MotionH1
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
                 className="text-4xl font-extrabold text-on-surface dark:text-dark-on-surface tracking-tight"
             >
                 ShopLedger
-            </motion.h1>
+            </MotionH1>
 
-            <motion.p
+            <MotionP
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
                 className="text-lg font-medium text-primary tracking-wide"
             >
                 Simple. Smart. Sales.
-            </motion.p>
+            </MotionP>
         </div>
 
         {/* Loader */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, width: 0 }}
           animate={{ opacity: 1, width: 140 }}
           transition={{ delay: 0.5, duration: 0.5 }}
           className="h-1 bg-border-color dark:bg-dark-border-color rounded-full mt-12 overflow-hidden relative"
         >
-            <motion.div 
+            <MotionDiv 
                 className="absolute inset-0 bg-primary"
                 initial={{ x: '-100%' }}
                 animate={{ x: '0%' }}
                 transition={{ delay: 0.5, duration: 1.5, ease: "easeInOut" }}
             />
-        </motion.div>
+        </MotionDiv>
       </div>
 
       {/* Footer */}
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8, duration: 0.5 }}
@@ -83,8 +87,8 @@ const SplashScreen = () => {
           Built by Shadrack
         </p>
         <p className="text-[10px] text-subtle-text/40 mt-1 font-mono">v1.0</p>
-      </motion.div>
-    </motion.div>
+      </MotionDiv>
+    </MotionDiv>
   );
 };
 

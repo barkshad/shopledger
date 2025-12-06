@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesIcon, SearchIcon, StatsIcon, ShoppingCartIcon, ArrowUpRightIcon } from './icons';
@@ -8,6 +9,8 @@ import * as statsUtils from '../utils/statsUtils';
 import Spinner from './Spinner';
 
 type Tab = 'research' | 'analysis' | 'chat';
+
+const MotionDiv = motion.div as any;
 
 const AIAssistant = () => {
   const [activeTab, setActiveTab] = useState<Tab>('research');
@@ -116,7 +119,7 @@ const AIAssistant = () => {
         <div className="p-6 min-h-[400px]">
           <AnimatePresence mode="wait">
             {activeTab === 'research' && (
-              <motion.div
+              <MotionDiv
                 key="research"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -165,11 +168,11 @@ const AIAssistant = () => {
                     )}
                   </div>
                 )}
-              </motion.div>
+              </MotionDiv>
             )}
 
             {activeTab === 'analysis' && (
-              <motion.div
+              <MotionDiv
                 key="analysis"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -198,11 +201,11 @@ const AIAssistant = () => {
                         {result}
                     </div>
                 )}
-              </motion.div>
+              </MotionDiv>
             )}
 
             {activeTab === 'chat' && (
-              <motion.div
+              <MotionDiv
                 key="chat"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -244,7 +247,7 @@ const AIAssistant = () => {
                         <ArrowUpRightIcon className="w-5 h-5" />
                       </button>
                 </form>
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
         </div>

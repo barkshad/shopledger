@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast, ToastMessage } from '../hooks/useToast';
@@ -9,6 +10,8 @@ const icons = {
   info: <InfoIcon className="h-6 w-6 text-blue-500" />,
 };
 
+const MotionDiv = motion.div as any;
+
 const Toast: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -19,7 +22,7 @@ const Toast: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void }> =
   }, [toast, onRemove]);
 
   return (
-    <motion.div
+    <MotionDiv
       layout
       initial={{ opacity: 0, y: 50, scale: 0.3 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -42,7 +45,7 @@ const Toast: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void }> =
           </svg>
         </button>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

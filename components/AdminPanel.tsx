@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSales } from '../hooks/useSales';
@@ -19,6 +20,8 @@ import {
 import ExpensesManagementTab from './admin/ExpensesManagementTab';
 
 type AdminTab = 'sales' | 'expenses' | 'reports' | 'data' | 'settings';
+
+const MotionDiv = motion.div as any;
 
 const AdminPanel = () => {
   const { settings } = useAdminSettings();
@@ -52,7 +55,7 @@ const AdminPanel = () => {
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto mt-10">
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-surface p-8 rounded-xl shadow-subtle border border-border-color text-center"
@@ -78,7 +81,7 @@ const AdminPanel = () => {
               Unlock
             </button>
           </form>
-        </motion.div>
+        </MotionDiv>
       </div>
     );
   }
@@ -135,7 +138,7 @@ const AdminPanel = () => {
         </div>
         <div className="lg:col-span-3">
           <AnimatePresence mode="wait">
-            <motion.div
+            <MotionDiv
               key={activeTab}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -144,7 +147,7 @@ const AdminPanel = () => {
               className="bg-surface p-6 rounded-xl shadow-subtle border border-border-color min-h-[60vh]"
             >
               {renderTabContent()}
-            </motion.div>
+            </MotionDiv>
           </AnimatePresence>
         </div>
       </div>

@@ -19,6 +19,10 @@ import Statistics from './components/Statistics';
 import SearchResults from './components/SearchResults';
 import ProductManagement from './components/ProductManagement';
 import CustomerManagement from './components/CustomerManagement';
+import WeeklySales from './components/WeeklySales';
+
+// Cast motion.div to any to avoid type errors in this environment
+const MotionDiv = motion.div as any;
 
 function App() {
   const location = useLocation();
@@ -32,7 +36,7 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const fabPaths = ['/', '/history', '/expenses', '/products', '/customers'];
+  const fabPaths = ['/', '/history', '/expenses', '/products', '/customers', '/weekly'];
   const showFab = fabPaths.includes(location.pathname);
 
   return (
@@ -41,7 +45,7 @@ function App() {
         {showSplash ? (
           <SplashScreen key="splash" />
         ) : (
-          <motion.div
+          <MotionDiv
             key="main-app"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -59,6 +63,7 @@ function App() {
                   <Route path="/customers" element={<AnimatedPage><CustomerManagement /></AnimatedPage>} />
                   <Route path="/add-expense" element={<AnimatedPage><AddExpense /></AnimatedPage>} />
                   <Route path="/history" element={<AnimatedPage><SalesHistory /></AnimatedPage>} />
+                  <Route path="/weekly" element={<AnimatedPage><WeeklySales /></AnimatedPage>} />
                   <Route path="/expenses" element={<AnimatedPage><ExpensesHistory /></AnimatedPage>} />
                   <Route path="/statistics" element={<AnimatedPage><Statistics /></AnimatedPage>} />
                   <Route path="/admin" element={<AnimatedPage><AdminPanel /></AnimatedPage>} />
@@ -68,7 +73,7 @@ function App() {
             </main>
             {showFab && <FAB />}
             <BottomNav />
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
     </ToastProvider>

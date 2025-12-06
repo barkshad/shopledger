@@ -25,9 +25,11 @@ const itemVariants: Variants = {
   },
 };
 
+const MotionDiv = motion.div as any;
+
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, data, dataKey, color }) => {
   return (
-    <motion.div 
+    <MotionDiv 
         variants={itemVariants} 
         whileHover={{ translateY: -5, transition: { type: 'spring', stiffness: 300 } }}
         className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color overflow-hidden relative"
@@ -54,7 +56,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, data, dataKey, 
             </ResponsiveContainer>
         </div>
       )}
-    </motion.div>
+    </MotionDiv>
   );
 };
 

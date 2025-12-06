@@ -1,7 +1,11 @@
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircleIcon, ShoppingCartIcon, CreditCardIcon } from './icons';
 import { useNavigate } from 'react-router-dom';
+
+const MotionDiv = motion.div as any;
+const MotionButton = motion.button as any;
 
 const FAB = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,8 +30,8 @@ const FAB = () => {
     <div className="fixed bottom-20 right-4 z-50 md:hidden">
       <AnimatePresence>
         {isOpen && (
-          <motion.div className="flex flex-col items-center gap-4 mb-4">
-            <motion.div
+          <MotionDiv className="flex flex-col items-center gap-4 mb-4">
+            <MotionDiv
               variants={childVariants}
               initial="closed"
               animate="open"
@@ -38,8 +42,8 @@ const FAB = () => {
             >
               <span className="font-semibold text-sm">Add Expense</span>
               <CreditCardIcon className="h-6 w-6 text-danger dark:text-dark-danger" />
-            </motion.div>
-            <motion.div
+            </MotionDiv>
+            <MotionDiv
               variants={childVariants}
               initial="closed"
               animate="open"
@@ -50,11 +54,11 @@ const FAB = () => {
             >
               <span className="font-semibold text-sm">Add Sale</span>
               <ShoppingCartIcon className="h-6 w-6 text-primary" />
-            </motion.div>
-          </motion.div>
+            </MotionDiv>
+          </MotionDiv>
         )}
       </AnimatePresence>
-      <motion.button
+      <MotionButton
         variants={parentVariants}
         animate={isOpen ? 'open' : 'closed'}
         whileTap={{ scale: 0.9 }}
@@ -63,7 +67,7 @@ const FAB = () => {
         aria-label="Add new transaction"
       >
         <PlusCircleIcon className="h-8 w-8" />
-      </motion.button>
+      </MotionButton>
     </div>
   );
 };

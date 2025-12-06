@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSales } from '../hooks/useSales';
 import { useExpenses } from '../hooks/useExpenses';
 import Spinner from './Spinner';
@@ -11,9 +11,9 @@ import { useAdminSettings } from '../hooks/useAdminSettings';
 type SearchResultItem = (Sale & { type: 'sale' }) | (Expense & { type: 'expense' });
 
 const SearchResults = () => {
-    const [searchParams] = useSearchParams();
+    const location = useLocation();
     const navigate = useNavigate();
-    const query = searchParams.get('q') || '';
+    const query = new URLSearchParams(location.search).get('q') || '';
     const [searchTerm, setSearchTerm] = useState(query);
 
     const { sales, loading: salesLoading } = useSales();

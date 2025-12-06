@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,6 +12,8 @@ interface ConfirmationDialogProps {
   cancelText?: string;
 }
 
+const MotionDiv = motion.div as any;
+
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   isOpen,
   onClose,
@@ -23,20 +26,20 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={onClose}
         >
-          <motion.div
+          <MotionDiv
             initial={{ scale: 0.9, y: -20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: -20, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="bg-surface rounded-xl shadow-xl w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           >
             <div className="p-6">
               <h2 className="text-xl font-bold text-on-surface mb-2">{title}</h2>
@@ -59,8 +62,8 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </MotionDiv>
+        </MotionDiv>
       )}
     </AnimatePresence>
   );

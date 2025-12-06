@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useExpenses } from '../../hooks/useExpenses';
 import { useToast } from '../../hooks/useToast';
@@ -8,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EditIcon, TrashIcon, SaveIcon, CancelIcon, CreditCardIcon, InfoIcon, SortAscIcon, SortDescIcon, ChevronLeftIcon, ChevronRightIcon } from '../icons';
 
 type SortableKey = 'name' | 'amount' | 'date' | 'category';
+
+const MotionDiv = motion.div as any;
 
 const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> = ({ logAction }) => {
     const { expenses, loading, updateExpense, deleteExpense } = useExpenses();
@@ -123,8 +126,8 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
             />
             <AnimatePresence>
                 {isDetailsModalOpen && viewingExpense && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={() => setIsDetailsModalOpen(false)}>
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-surface rounded-xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                    <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={() => setIsDetailsModalOpen(false)}>
+                        <MotionDiv initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-surface rounded-xl shadow-xl w-full max-w-lg" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                             <div className="p-6 space-y-4">
                                <h3 className="text-xl font-bold">{viewingExpense.name}</h3>
                                {viewingExpense.receiptPhoto && <img src={viewingExpense.receiptPhoto} alt={viewingExpense.name} className="w-full h-64 object-cover rounded-lg" />}
@@ -142,8 +145,8 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
                                    <button onClick={() => setIsDetailsModalOpen(false)} className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold">Close</button>
                                </div>
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        </MotionDiv>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
 

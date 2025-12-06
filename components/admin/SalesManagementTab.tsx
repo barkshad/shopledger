@@ -10,6 +10,8 @@ import { EditIcon, TrashIcon, SaveIcon, CancelIcon, PackageIcon, InfoIcon, SortA
 
 type SortableKey = 'itemName' | 'total' | 'date' | 'paymentMethod';
 
+const MotionDiv = motion.div as any;
+
 const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = ({ logAction }) => {
     const { sales, loading, updateSale, deleteSale } = useSales();
     const { addToast } = useToast();
@@ -141,8 +143,8 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
             />
             <AnimatePresence>
                 {isDetailsModalOpen && viewingSale && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={() => setIsDetailsModalOpen(false)}>
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-surface rounded-xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                    <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={() => setIsDetailsModalOpen(false)}>
+                        <MotionDiv initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-surface rounded-xl shadow-xl w-full max-w-lg" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                             <div className="p-6 space-y-4">
                                <h3 className="text-xl font-bold">{viewingSale.itemName}</h3>
                                {viewingSale.photo && <img src={viewingSale.photo} alt={viewingSale.itemName} className="w-full h-64 object-cover rounded-lg" />}
@@ -162,8 +164,8 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                                    <button onClick={() => setIsDetailsModalOpen(false)} className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold">Close</button>
                                </div>
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        </MotionDiv>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
 

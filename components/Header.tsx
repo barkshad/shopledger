@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { DashboardIcon, HistoryIcon, UsersIcon, ListIcon, ShoppingCartIcon, StatsIcon, SearchIcon } from './icons';
+import { DashboardIcon, HistoryIcon, UsersIcon, ListIcon, ShoppingCartIcon, StatsIcon, SearchIcon, CalendarIcon } from './icons';
+
+const MotionDiv = motion.div as any;
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; }> = ({ to, children }) => (
     <NavLink
@@ -37,9 +40,9 @@ const Header = () => {
                 <div className="flex items-center justify-between h-16 gap-4">
                     <div className="flex-shrink-0">
                         <NavLink to="/" className="flex items-center gap-2 text-2xl font-bold text-primary">
-                            <motion.div whileHover={{ rotate: 15 }}>
+                            <MotionDiv whileHover={{ rotate: 15 }}>
                                 <ShoppingCartIcon className="h-7 w-7" />
-                            </motion.div>
+                            </MotionDiv>
                             ShopLedger
                         </NavLink>
                     </div>
@@ -68,6 +71,7 @@ const Header = () => {
                     <nav className="hidden md:flex items-center space-x-1">
                         <NavItem to="/"><DashboardIcon className="h-5 w-5"/><span>Dashboard</span></NavItem>
                         <NavItem to="/history"><HistoryIcon className="h-5 w-5"/><span>Sales</span></NavItem>
+                        <NavItem to="/weekly"><CalendarIcon className="h-5 w-5"/><span>Weekly</span></NavItem>
                         <NavItem to="/expenses"><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
                         <NavItem to="/statistics"><StatsIcon className="h-5 w-5"/><span>Statistics</span></NavItem>
                         <NavItem to="/admin"><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>

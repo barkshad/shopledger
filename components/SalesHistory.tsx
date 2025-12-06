@@ -18,6 +18,10 @@ interface EditState extends Omit<Sale, 'id' | 'total'> {
     photo?: string;
 }
 
+const MotionDiv = motion.div as any;
+const MotionButton = motion.button as any;
+const MotionImg = motion.img as any;
+
 const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
 
 const getPaymentBadgeColor = (method: string | undefined) => {
@@ -220,22 +224,22 @@ const SalesHistory = () => {
 
     <AnimatePresence>
       {isPhotoModalOpen && selectedPhoto && (
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4"
           onClick={closePhotoModal}
         >
-          <motion.img
+          <MotionImg
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}
             src={selectedPhoto}
             className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent<HTMLImageElement>) => e.stopPropagation()}
           />
-        </motion.div>
+        </MotionDiv>
       )}
     </AnimatePresence>
 
@@ -263,7 +267,7 @@ const SalesHistory = () => {
         {/* Collapsible Filters */}
         <AnimatePresence>
             {showFilters && (
-                <motion.div 
+                <MotionDiv 
                     initial={{ height: 0, opacity: 0 }} 
                     animate={{ height: 'auto', opacity: 1 }} 
                     exit={{ height: 0, opacity: 0 }}
@@ -292,7 +296,7 @@ const SalesHistory = () => {
                             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none"/>
                         </div>
                     </div>
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
 
@@ -308,7 +312,7 @@ const SalesHistory = () => {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredAndSortedSales.map((sale) => (
-                    <motion.div
+                    <MotionDiv
                         layout
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -420,14 +424,14 @@ const SalesHistory = () => {
                                 </div>
                             </div>
                         )}
-                    </motion.div>
+                    </MotionDiv>
                 ))}
             </div>
         )}
     </div>
 
     {/* Dedicated FAB for Add Sale */}
-    <motion.button
+    <MotionButton
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileHover={{ scale: 1.05 }}
@@ -437,7 +441,7 @@ const SalesHistory = () => {
     >
         <PlusCircleIcon className="h-6 w-6" />
         <span className="font-bold">New Sale</span>
-    </motion.button>
+    </MotionButton>
     </>
   );
 };

@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon, PackageIcon, ShoppingCartIcon } from './icons';
+import { DashboardIcon, PlusCircleIcon, HistoryIcon, UsersIcon, CreditCardIcon, ListIcon, PackageIcon, ShoppingCartIcon, CalendarIcon } from './icons';
+
+const MotionDiv = motion.div as any;
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
@@ -58,7 +60,7 @@ const Navbar = () => {
 
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
+                    <MotionDiv
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
@@ -70,10 +72,11 @@ const Navbar = () => {
                             <NavItem to="/products" onClick={closeMenu}><PackageIcon className="h-5 w-5"/><span>Products</span></NavItem>
                              <NavItem to="/customers" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Customers</span></NavItem>
                             <NavItem to="/history" onClick={closeMenu}><HistoryIcon className="h-5 w-5"/><span>Sales History</span></NavItem>
+                            <NavItem to="/weekly" onClick={closeMenu}><CalendarIcon className="h-5 w-5"/><span>Weekly Sales</span></NavItem>
                             <NavItem to="/expenses" onClick={closeMenu}><ListIcon className="h-5 w-5"/><span>Expenses</span></NavItem>
                             <NavItem to="/admin" onClick={closeMenu}><UsersIcon className="h-5 w-5"/><span>Admin</span></NavItem>
                         </nav>
-                    </motion.div>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
         </header>
