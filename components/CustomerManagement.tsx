@@ -15,7 +15,7 @@ const CustomerManagement = () => {
     const { addToast } = useToast();
     const { settings } = useAdminSettings();
     const [searchTerm, setSearchTerm] = useState('');
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const refreshCustomers = async () => {
         setCustomers(await db.getAllCustomers());
@@ -40,7 +40,7 @@ const CustomerManagement = () => {
             setFormData({ name: '', phone: '', email: '', totalSpent: 0, visitCount: 0, notes: '' });
             refreshCustomers();
         } catch (e) {
-            addToast('Error saving customer. Phone number might be duplicate.', 'error');
+            addToast('Error saving customer.', 'error');
         }
     };
 
@@ -66,7 +66,7 @@ const CustomerManagement = () => {
         <div className="space-y-6">
              <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">Customer Management</h1>
-                <button onClick={() => { setEditingCustomer(null); setFormData({ name: '', phone: '', email: '', totalSpent: 0, visitCount: 0, notes: '' }); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-blue-600">
+                <button onClick={() => { setEditingCustomer(null); setFormData({ name: '', phone: '', email: '', totalSpent: 0, visitCount: 0, notes: '' }); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-zinc-800">
                     <PlusCircleIcon className="h-5 w-5" /> Add Customer
                 </button>
             </div>
@@ -122,7 +122,7 @@ const CustomerManagement = () => {
                             <div><label className="block text-sm mb-1">Notes</label><textarea rows={3} value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} className={inputClass} /></div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-blue-600">Save</button>
+                                <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-zinc-800">Save</button>
                             </div>
                         </form>
                     </div>

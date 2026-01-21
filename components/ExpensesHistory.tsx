@@ -11,18 +11,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const EXPENSE_CATEGORIES = ["Stock Purchase", "Transport", "Utilities", "Rent", "Salaries", "Miscellaneous"];
 
-interface EditState extends Omit<Expense, 'id'> {
-    id: number;
-    receiptPhoto?: string;
+interface EditState extends Expense {
+    id: string;
 }
 
 const MotionDiv = motion.div as any;
 const MotionImg = motion.img as any;
 
 const SummaryStatCard: React.FC<{ title: string; value: string; }> = ({ title, value }) => (
-  <div className="bg-surface rounded-xl shadow-subtle p-4 border border-border-color">
+  <div className="bg-surface dark:bg-dark-surface rounded-xl shadow-subtle p-4 border border-border-color dark:border-dark-border-color">
     <h3 className="text-sm font-medium text-subtle-text truncate">{title}</h3>
-    <p className="mt-1 text-2xl font-semibold text-on-surface">{value}</p>
+    <p className="mt-1 text-2xl font-semibold text-on-surface dark:text-dark-on-surface">{value}</p>
   </div>
 );
 
@@ -34,7 +33,7 @@ const ExpensesHistory = () => {
   
   const [editingExpense, setEditingExpense] = useState<EditState | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,8 +79,8 @@ const ExpensesHistory = () => {
 
     if (sortConfig.key) {
         filtered.sort((a, b) => {
-            let aValue: string | number = a[sortConfig.key];
-            let bValue: string | number = b[sortConfig.key];
+            let aValue: string | number = (a as any)[sortConfig.key];
+            let bValue: string | number = (b as any)[sortConfig.key];
             if (sortConfig.key === 'date') {
                 aValue = new Date(a.date).getTime();
                 bValue = new Date(b.date).getTime();
@@ -138,7 +137,7 @@ const ExpensesHistory = () => {
     setEditingExpense(null);
   };
   
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setExpenseToDelete(id);
     setDialogOpen(true);
   };
@@ -190,30 +189,30 @@ const ExpensesHistory = () => {
           <SummaryStatCard title="Highest Category" value={summaryStats.highestCategory} />
       </div>
 
-      <div className="bg-surface p-4 rounded-xl shadow-subtle border border-border-color flex flex-col md:flex-row gap-4 items-center flex-wrap">
-          <input type="text" placeholder="Search..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full md:w-auto md:flex-1 px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" />
-          <select value={categoryFilter} onChange={e => {setCategoryFilter(e.target.value); setCurrentPage(1)}} className="w-full md:w-auto px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+      <div className="bg-surface dark:bg-dark-surface p-4 rounded-xl shadow-sm border border-border-color dark:border-dark-border-color flex flex-col md:flex-row gap-4 items-center flex-wrap">
+          <input type="text" placeholder="Search..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full md:w-auto md:flex-1 px-4 py-2 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <select value={categoryFilter} onChange={e => {setCategoryFilter(e.target.value); setCurrentPage(1)}} className="w-full md:w-auto px-4 py-2 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
             <option value="All">All Categories</option>
             {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <div className="flex items-center gap-2 w-full md:w-auto">
-              <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
+              <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
               <span className="text-subtle-text">-</span>
-              <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
+              <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setCurrentPage(1); }} className="w-full px-4 py-2 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"/>
           </div>
           <div className="flex items-center">
               <input id="receipt-filter" type="checkbox" checked={showWithReceiptsOnly} onChange={(e) => { setShowWithReceiptsOnly(e.target.checked); setCurrentPage(1); }} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"/>
               <label htmlFor="receipt-filter" className="ml-2 block text-sm text-on-surface">Receipts only</label>
           </div>
-          <button onClick={handleDownloadReport} disabled={isExporting} className="w-full md:w-auto bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400">
+          <button onClick={handleDownloadReport} disabled={isExporting} className="w-full md:w-auto bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400">
               {isExporting ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <DownloadIcon className="h-5 w-5" />}
               {isExporting ? 'Exporting...' : 'Export'}
           </button>
       </div>
 
-      <div className="bg-surface rounded-xl shadow-subtle border border-border-color overflow-hidden">
+      <div className="bg-surface dark:bg-dark-surface rounded-xl shadow-sm border border-border-color dark:border-dark-border-color overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border-color">
+          <table className="min-w-full divide-y divide-border-color dark:divide-dark-border-color">
             <thead className="bg-background/80">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Receipt</th>
@@ -224,7 +223,7 @@ const ExpensesHistory = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-subtle-text uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-surface divide-y divide-border-color">
+            <tbody className="bg-surface dark:bg-dark-surface divide-y divide-border-color dark:divide-dark-border-color">
               {paginatedExpenses.map((expense) => (
                 editingExpense?.id === expense.id ? (
                     <tr key={expense.id} className="bg-primary/5">
@@ -243,15 +242,15 @@ const ExpensesHistory = () => {
                 ) : (
                     <tr key={expense.id} className="even:bg-background/50 hover:bg-primary/5 transition-colors group">
                         <td className="px-6 py-4 whitespace-nowrap">
-                            {expense.receiptPhoto ? <img src={expense.receiptPhoto} alt={expense.name} className="h-10 w-10 rounded-md object-cover cursor-pointer hover:scale-110 transition-transform" onClick={() => expense.receiptPhoto && openPhotoModal(expense.receiptPhoto)} /> : <div className="h-10 w-10 rounded-md bg-background flex items-center justify-center"><CreditCardIcon className="h-6 w-6 text-subtle-text"/></div>}
+                            {expense.receiptPhoto ? <img src={expense.receiptPhoto} alt={expense.name} className="h-10 w-10 rounded-md object-cover cursor-pointer hover:scale-110 transition-transform" onClick={() => expense.receiptPhoto && openPhotoModal(expense.receiptPhoto)} /> : <div className="h-10 w-10 rounded-md bg-background dark:bg-dark-background flex items-center justify-center"><CreditCardIcon className="h-6 w-6 text-subtle-text"/></div>}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-on-surface">{expense.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-on-surface dark:text-dark-on-surface">{expense.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{expense.category}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text font-semibold">{formatCurrency(expense.amount)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text">{formatDate(expense.date)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
-                                <button onClick={() => handleEditClick(expense)} className="text-primary hover:text-blue-700 p-2 rounded-full hover:bg-primary/10"><EditIcon className="h-5 w-5"/></button>
+                                <button onClick={() => handleEditClick(expense)} className="text-primary hover:text-zinc-800 p-2 rounded-full hover:bg-primary/10"><EditIcon className="h-5 w-5"/></button>
                                 <button onClick={() => expense.id && handleDeleteClick(expense.id)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100"><TrashIcon className="h-5 w-5"/></button>
                             </div>
                         </td>

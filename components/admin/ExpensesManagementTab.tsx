@@ -18,13 +18,13 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
     
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [expensesToDelete, setExpensesToDelete] = useState<number[]>([]);
+    const [expensesToDelete, setExpensesToDelete] = useState<string[]>([]);
     
     const [searchTerm, setSearchTerm] = useState('');
     const [amountRange, setAmountRange] = useState({ min: '', max: '' });
     const [sortConfig, setSortConfig] = useState<{ key: SortableKey; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
     
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
@@ -39,8 +39,8 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
             .filter(e => amountRange.max === '' || e.amount <= Number(amountRange.max));
 
         filtered.sort((a, b) => {
-            let aValue: string | number = a[sortConfig.key];
-            let bValue: string | number = b[sortConfig.key];
+            let aValue: string | number = (a as any)[sortConfig.key];
+            let bValue: string | number = (b as any)[sortConfig.key];
             if (sortConfig.key === 'date') {
                 aValue = new Date(a.date).getTime();
                 bValue = new Date(b.date).getTime();
@@ -62,7 +62,7 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
         setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending' }));
     };
 
-    const handleSelect = (id: number) => {
+    const handleSelect = (id: string) => {
         const newSelected = new Set(selectedIds);
         if (newSelected.has(id)) newSelected.delete(id);
         else newSelected.add(id);
@@ -85,7 +85,7 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
         setEditingExpense(null);
     };
 
-    const handleDeleteClick = (ids: number[]) => {
+    const handleDeleteClick = (ids: string[]) => {
         if (ids.length === 0) return;
         setExpensesToDelete(ids);
         setDialogOpen(true);
@@ -141,7 +141,7 @@ const ExpensesManagementTab: React.FC<{ logAction: (message: string) => void }> 
                                    <textarea id="notes" rows={3} className="w-full p-2 bg-background border border-border-color rounded-md" value={viewingExpense.note || ''} onChange={e => setViewingExpense(v => v ? {...v, note: e.target.value} : null)}></textarea>
                                </div>
                                <div className="flex justify-end gap-3">
-                                   <button onClick={handleSaveNotes} className="px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold hover:bg-blue-600">Save Notes</button>
+                                   <button onClick={handleSaveNotes} className="px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold hover:bg-zinc-800">Save Notes</button>
                                    <button onClick={() => setIsDetailsModalOpen(false)} className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold">Close</button>
                                </div>
                             </div>

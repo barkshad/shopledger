@@ -9,7 +9,8 @@ const animations = {
 };
 
 interface AnimatedPageProps {
-  children: React.ReactNode;
+  // Added optional modifier to children to resolve TypeScript "missing children" errors in certain environments
+  children?: React.ReactNode;
 }
 
 const MotionDiv = motion.div as any;

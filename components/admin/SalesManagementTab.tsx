@@ -18,13 +18,13 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
     
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [salesToDelete, setSalesToDelete] = useState<number[]>([]);
+    const [salesToDelete, setSalesToDelete] = useState<string[]>([]);
     
     const [searchTerm, setSearchTerm] = useState('');
     const [priceRange, setPriceRange] = useState({ min: '', max: '' });
     const [sortConfig, setSortConfig] = useState<{ key: SortableKey; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
     
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [viewingSale, setViewingSale] = useState<Sale | null>(null);
@@ -46,8 +46,8 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                 return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
             }
 
-            const aValue = a[sortConfig.key];
-            const bValue = b[sortConfig.key];
+            const aValue = (a as any)[sortConfig.key];
+            const bValue = (b as any)[sortConfig.key];
 
             // Handle Numeric Sorting
             if (typeof aValue === 'number' && typeof bValue === 'number') {
@@ -75,7 +75,7 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
         setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending' }));
     };
 
-    const handleSelect = (id: number) => {
+    const handleSelect = (id: string) => {
         const newSelected = new Set(selectedIds);
         if (newSelected.has(id)) newSelected.delete(id);
         else newSelected.add(id);
@@ -102,7 +102,7 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
         setEditingSale(null);
     };
 
-    const handleDeleteClick = (ids: number[]) => {
+    const handleDeleteClick = (ids: string[]) => {
         if (ids.length === 0) return;
         setSalesToDelete(ids);
         setDialogOpen(true);
@@ -160,7 +160,7 @@ const SalesManagementTab: React.FC<{ logAction: (message: string) => void }> = (
                                    <textarea id="notes" rows={3} className="w-full p-2 bg-background border border-border-color rounded-md" value={viewingSale.notes || ''} onChange={e => setViewingSale(v => v ? {...v, notes: e.target.value} : null)}></textarea>
                                </div>
                                <div className="flex justify-end gap-3">
-                                   <button onClick={handleSaveNotes} className="px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold hover:bg-blue-600">Save Notes</button>
+                                   <button onClick={handleSaveNotes} className="px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold hover:bg-zinc-800">Save Notes</button>
                                    <button onClick={() => setIsDetailsModalOpen(false)} className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold">Close</button>
                                </div>
                             </div>

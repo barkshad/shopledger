@@ -16,6 +16,7 @@ import {
   DocumentData,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { Sale, Expense, Product, Customer, AdminSettings } from '../types';
 
 const firebaseConfig = {
@@ -31,6 +32,9 @@ const firebaseConfig = {
 // Initialize Firebase once
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+export { auth };
 
 const SALES_COLLECTION = 'sales';
 const EXPENSES_COLLECTION = 'expenses';
@@ -44,7 +48,7 @@ const mapDoc = <T,>(doc: QueryDocumentSnapshot<DocumentData>): T => ({
   id: doc.id,
 });
 
-// Settings Functions (Replacing LocalStorage)
+// Settings Functions
 export const getSettings = async (): Promise<AdminSettings | null> => {
   const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_ID);
   const docSnap = await getDoc(docRef);

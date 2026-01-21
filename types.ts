@@ -54,7 +54,6 @@ export interface Customer {
 }
 
 export interface AdminSettings {
-  secretKey: string;
   theme: 'light' | 'dark';
   currency: 'KSh' | 'USD' | 'EUR' | 'GBP';
   isPhotoSavingEnabled: boolean;

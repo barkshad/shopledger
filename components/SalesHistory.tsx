@@ -13,9 +13,8 @@ import { useAdminSettings } from '../hooks/useAdminSettings';
 import { useToast } from '../hooks/useToast';
 import { useNavigate } from 'react-router-dom';
 
-interface EditState extends Omit<Sale, 'id' | 'total'> {
-    id: number;
-    photo?: string;
+interface EditState extends Omit<Sale, 'total'> {
+    id: string;
 }
 
 const MotionDiv = motion.div as any;
@@ -44,7 +43,7 @@ const SalesHistory = () => {
   
   const [editingSale, setEditingSale] = useState<EditState | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [saleToDelete, setSaleToDelete] = useState<number | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
 
   // Filters
@@ -141,7 +140,7 @@ const SalesHistory = () => {
     addToast("Sale updated successfully", "success");
   };
   
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setSaleToDelete(id);
     setDialogOpen(true);
   };
@@ -183,7 +182,7 @@ const SalesHistory = () => {
               body: tableRows,
               startY: 35,
               theme: 'grid',
-              headStyles: { fillColor: [78, 168, 255] },
+              headStyles: { fillColor: [0, 0, 0] },
           });
 
           const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.total, 0);
@@ -279,21 +278,21 @@ const SalesHistory = () => {
                             placeholder="Search items..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="px-4 py-2 rounded-lg bg-background border border-border-color focus:ring-2 focus:ring-primary focus:outline-none"
+                            className="px-4 py-2 rounded-lg bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color focus:ring-2 focus:ring-primary focus:outline-none"
                         />
                         <select 
                             value={paymentFilter} 
                             onChange={e => setPaymentFilter(e.target.value)} 
-                            className="px-4 py-2 rounded-lg bg-background border border-border-color focus:ring-2 focus:ring-primary focus:outline-none"
+                            className="px-4 py-2 rounded-lg bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color focus:ring-2 focus:ring-primary focus:outline-none"
                         >
                             <option value="All">All Payments</option>
                             {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                         <div className="flex items-center gap-2">
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none"/>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-lg focus:outline-none"/>
                         </div>
                          <div className="flex items-center gap-2">
-                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-background border border-border-color rounded-lg focus:outline-none"/>
+                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-lg focus:outline-none"/>
                         </div>
                     </div>
                 </MotionDiv>
@@ -328,7 +327,7 @@ const SalesHistory = () => {
                                     <input 
                                         value={editingSale.itemName} 
                                         onChange={e => setEditingSale({...editingSale, itemName: e.target.value})}
-                                        className="w-full p-2 rounded-lg bg-background border border-border-color focus:ring-2 focus:ring-primary outline-none"
+                                        className="w-full p-2 rounded-lg bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color focus:ring-2 focus:ring-primary outline-none"
                                     />
                                 </div>
                                 <div className="flex gap-3">
@@ -338,7 +337,7 @@ const SalesHistory = () => {
                                             type="number"
                                             value={editingSale.quantity} 
                                             onChange={e => setEditingSale({...editingSale, quantity: Number(e.target.value)})}
-                                            className="w-full p-2 rounded-lg bg-background border border-border-color outline-none"
+                                            className="w-full p-2 rounded-lg bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color outline-none"
                                         />
                                     </div>
                                     <div className="flex-1">
@@ -347,7 +346,7 @@ const SalesHistory = () => {
                                             type="number"
                                             value={editingSale.price} 
                                             onChange={e => setEditingSale({...editingSale, price: Number(e.target.value)})}
-                                            className="w-full p-2 rounded-lg bg-background border border-border-color outline-none"
+                                            className="w-full p-2 rounded-lg bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color outline-none"
                                         />
                                     </div>
                                 </div>
@@ -356,7 +355,7 @@ const SalesHistory = () => {
                                     <select 
                                         value={editingSale.paymentMethod} 
                                         onChange={e => setEditingSale({...editingSale, paymentMethod: e.target.value})}
-                                        className="w-full p-2 rounded-lg bg-background border border-border-color outline-none"
+                                        className="w-full p-2 rounded-lg bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color outline-none"
                                     >
                                         {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                                     </select>
@@ -373,7 +372,7 @@ const SalesHistory = () => {
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex gap-3 items-center">
                                             <div 
-                                                className="w-12 h-12 rounded-xl bg-background flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer border border-border-color"
+                                                className="w-12 h-12 rounded-xl bg-background dark:bg-dark-background flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer border border-border-color dark:border-dark-border-color"
                                                 onClick={() => sale.photo && openPhotoModal(sale.photo)}
                                             >
                                                 {sale.photo ? (
@@ -383,7 +382,7 @@ const SalesHistory = () => {
                                                 )}
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-lg text-on-surface leading-tight line-clamp-1">{sale.itemName}</h3>
+                                                <h3 className="font-bold text-lg text-on-surface dark:text-dark-on-surface leading-tight line-clamp-1">{sale.itemName}</h3>
                                                 <div className="text-sm text-subtle-text mt-0.5 flex items-center gap-1">
                                                    <span>{sale.quantity}</span>
                                                    <span className="text-xs">x</span>

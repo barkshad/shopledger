@@ -3,10 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AdminSettings } from '../types';
 import * as db from '../services/db';
 
-const ADMIN_SECRET_KEY_DEFAULT = '12345';
-
 const defaultSettings: AdminSettings = {
-  secretKey: ADMIN_SECRET_KEY_DEFAULT,
   theme: 'light',
   currency: 'KSh',
   isPhotoSavingEnabled: true,
@@ -49,7 +46,6 @@ export const useAdminSettings = () => {
   const updateSettings = useCallback(async (newSettings: Partial<AdminSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
-      // Fire and forget Firestore update
       db.updateSettings(updated).catch(e => console.error("Firestore settings update failed", e));
       return updated;
     });

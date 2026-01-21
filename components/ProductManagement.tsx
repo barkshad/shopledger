@@ -15,7 +15,7 @@ const ProductManagement = () => {
     const { addToast } = useToast();
     const { settings } = useAdminSettings();
     const [searchTerm, setSearchTerm] = useState('');
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const refreshProducts = async () => {
         setProducts(await db.getAllProducts());
@@ -40,7 +40,7 @@ const ProductManagement = () => {
             setFormData({ name: '', barcode: '', price: 0, costPrice: 0, stock: 0, minStock: 5, category: '' });
             refreshProducts();
         } catch (e) {
-            addToast('Error saving product. Barcode might be duplicate.', 'error');
+            addToast('Error saving product.', 'error');
         }
     };
 
@@ -67,7 +67,7 @@ const ProductManagement = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">Product Inventory</h1>
-                <button onClick={() => { setEditingProduct(null); setFormData({ name: '', barcode: '', price: 0, costPrice: 0, stock: 0, minStock: 5, category: '' }); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-blue-600">
+                <button onClick={() => { setEditingProduct(null); setFormData({ name: '', barcode: '', price: 0, costPrice: 0, stock: 0, minStock: 5, category: '' }); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-zinc-800">
                     <PlusCircleIcon className="h-5 w-5" /> Add Product
                 </button>
             </div>
@@ -132,7 +132,7 @@ const ProductManagement = () => {
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-blue-600">Save Product</button>
+                                <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-zinc-800">Save Product</button>
                             </div>
                         </form>
                     </div>
