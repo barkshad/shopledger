@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCartIcon } from './icons';
@@ -19,9 +18,9 @@ const SplashScreen = () => {
     >
       {/* Background Decoration */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:to-dark-background opacity-70" />
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-zinc-200/10 via-transparent to-zinc-900/5 dark:from-zinc-100/10 dark:to-dark-background opacity-70" />
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-zinc-400/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-zinc-900/10 rounded-full blur-3xl" />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10 px-4">
@@ -32,11 +31,11 @@ const SplashScreen = () => {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="relative mb-8"
         >
-          <div className="w-24 h-24 bg-gradient-to-tr from-primary to-blue-600 rounded-2xl shadow-glow flex items-center justify-center transform -rotate-3">
-            <ShoppingCartIcon className="w-12 h-12 text-white" strokeWidth={2.5} />
+          <div className="w-24 h-24 bg-gradient-to-tr from-zinc-900 to-zinc-700 dark:from-zinc-100 dark:to-zinc-300 rounded-2xl shadow-glow flex items-center justify-center transform -rotate-3">
+            <ShoppingCartIcon className="w-12 h-12 text-white dark:text-zinc-900" strokeWidth={2.5} />
           </div>
           {/* Decorative Ring */}
-          <div className="absolute inset-0 border-2 border-primary/20 rounded-2xl transform rotate-6 -z-10" />
+          <div className="absolute inset-0 border-2 border-zinc-900/10 dark:border-zinc-100/10 rounded-2xl transform rotate-6 -z-10" />
         </MotionDiv>
 
         {/* Text Animation */}
@@ -54,7 +53,7 @@ const SplashScreen = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                className="text-lg font-medium text-primary tracking-wide"
+                className="text-lg font-medium text-zinc-600 dark:text-zinc-400 tracking-wide"
             >
                 Simple. Smart. Sales.
             </MotionP>
@@ -68,7 +67,7 @@ const SplashScreen = () => {
           className="h-1 bg-border-color dark:bg-dark-border-color rounded-full mt-12 overflow-hidden relative"
         >
             <MotionDiv 
-                className="absolute inset-0 bg-primary"
+                className="absolute inset-0 bg-primary dark:bg-zinc-100"
                 initial={{ x: '-100%' }}
                 animate={{ x: '0%' }}
                 transition={{ delay: 0.5, duration: 1.5, ease: "easeInOut" }}

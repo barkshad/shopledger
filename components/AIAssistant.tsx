@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesIcon, SearchIcon, StatsIcon, ShoppingCartIcon, ArrowUpRightIcon } from './icons';
@@ -85,7 +84,7 @@ const AIAssistant = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-gradient-to-br from-primary to-purple-600 rounded-2xl shadow-lg">
+        <div className="p-3 bg-gradient-to-br from-zinc-900 to-zinc-600 rounded-2xl shadow-lg">
             <SparklesIcon className="w-8 h-8 text-white" />
         </div>
         <div>
@@ -98,19 +97,19 @@ const AIAssistant = () => {
         <div className="flex border-b border-border-color dark:border-dark-border-color">
           <button
             onClick={() => setActiveTab('research')}
-            className={`flex-1 py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'research' ? 'bg-primary/5 text-primary border-b-2 border-primary' : 'text-subtle-text hover:bg-background'}`}
+            className={`flex-1 py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'research' ? 'bg-zinc-100 dark:bg-zinc-800 text-primary dark:text-white border-b-2 border-primary dark:border-white' : 'text-subtle-text hover:bg-background'}`}
           >
             <SearchIcon className="w-4 h-4" /> Market Research
           </button>
           <button
             onClick={() => setActiveTab('analysis')}
-            className={`flex-1 py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'analysis' ? 'bg-primary/5 text-primary border-b-2 border-primary' : 'text-subtle-text hover:bg-background'}`}
+            className={`flex-1 py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'analysis' ? 'bg-zinc-100 dark:bg-zinc-800 text-primary dark:text-white border-b-2 border-primary dark:border-white' : 'text-subtle-text hover:bg-background'}`}
           >
             <StatsIcon className="w-4 h-4" /> Shop Analysis
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            className={`flex-1 py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-primary/5 text-primary border-b-2 border-primary' : 'text-subtle-text hover:bg-background'}`}
+            className={`flex-1 py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-zinc-100 dark:bg-zinc-800 text-primary dark:text-white border-b-2 border-primary dark:border-white' : 'text-subtle-text hover:bg-background'}`}
           >
             <SparklesIcon className="w-4 h-4" /> Quick Chat
           </button>
@@ -126,9 +125,9 @@ const AIAssistant = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-1">Google Search Grounding</h3>
-                    <p className="text-sm text-blue-600 dark:text-blue-300">Ask about current market prices, trends, or business advice. Real-time data sourced from Google.</p>
+                <div className="bg-zinc-50 dark:bg-zinc-900/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Google Search Grounding</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">Ask about current market prices, trends, or business advice. Real-time data sourced from Google.</p>
                 </div>
 
                 <form onSubmit={handleResearch} className="relative">
@@ -142,7 +141,7 @@ const AIAssistant = () => {
                   <button
                     type="submit"
                     disabled={loading || !query.trim()}
-                    className="absolute right-2 top-2 p-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                    className="absolute right-2 top-2 p-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-zinc-800 transition-colors"
                   >
                     {loading ? <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" /> : <ArrowUpRightIcon className="w-5 h-5" />}
                   </button>
@@ -158,7 +157,7 @@ const AIAssistant = () => {
                         <div className="space-y-1">
                           {groundingMetadata.groundingChunks.map((chunk: any, i: number) => (
                              chunk.web?.uri && (
-                                <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="block text-sm text-primary hover:underline truncate">
+                                <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="block text-sm text-zinc-900 dark:text-zinc-100 font-medium hover:underline truncate">
                                   {chunk.web.title || chunk.web.uri}
                                 </a>
                              )
@@ -180,14 +179,14 @@ const AIAssistant = () => {
                 className="space-y-6 text-center"
               >
                 <div className="max-w-md mx-auto">
-                    <ShoppingCartIcon className="w-16 h-16 mx-auto text-primary mb-4" />
+                    <ShoppingCartIcon className="w-16 h-16 mx-auto text-primary dark:text-white mb-4" />
                     <h3 className="text-xl font-bold mb-2">Analyze Your Shop's Health</h3>
                     <p className="text-subtle-text mb-6">Get AI-driven insights based on your actual sales and expense data. Discover trends and get actionable tips.</p>
                     
                     <button
                         onClick={handleAnalysis}
                         disabled={loading}
-                        className="px-6 py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
+                        className="px-6 py-3 bg-primary dark:bg-zinc-100 dark:text-zinc-900 text-white font-bold rounded-xl shadow-lg hover:bg-zinc-800 dark:hover:bg-white transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
                     >
                         {loading ? 'Analyzing...' : 'Generate Insights'}
                         {!loading && <SparklesIcon className="w-5 h-5" />}
@@ -242,7 +241,7 @@ const AIAssistant = () => {
                       <button
                         type="submit"
                         disabled={!chatMessage.trim()}
-                        className="absolute right-2 top-2 p-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                        className="absolute right-2 top-2 p-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-zinc-800 transition-colors"
                       >
                         <ArrowUpRightIcon className="w-5 h-5" />
                       </button>

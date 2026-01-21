@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -27,7 +26,7 @@ const itemVariants: Variants = {
 
 const MotionDiv = motion.div as any;
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, data, dataKey, color }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, data, dataKey, color = "#18181b" }) => {
   return (
     <MotionDiv 
         variants={itemVariants} 
@@ -35,13 +34,13 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, data, dataKey, 
         className="bg-surface dark:bg-dark-surface rounded-2xl shadow-soft p-6 border border-border-color dark:border-dark-border-color overflow-hidden relative"
     >
       <div className="flex items-center justify-between">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">
             {icon}
           </div>
       </div>
       <p className="mt-4 text-sm font-medium text-subtle-text dark:text-dark-subtle-text truncate">{title}</p>
       <p className="text-3xl font-bold text-on-surface dark:text-dark-on-surface truncate">{value}</p>
-      {data && dataKey && color && (
+      {data && dataKey && (
         <div className="absolute bottom-0 right-0 left-0 h-20">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>

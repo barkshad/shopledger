@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, YAxis, Tooltip } from 'recharts';
@@ -178,7 +177,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 animate-fade-in-up">
       <MotionDiv variants={itemVariants} initial="hidden" animate="visible">
-        <h1 className="text-3xl font-bold text-on-surface dark:text-dark-on-surface">Welcome back, Shadrack 👋</h1>
+        <h1 className="text-3xl font-bold text-on-surface dark:text-dark-on-surface">Welcome back 👋</h1>
         <p className="text-subtle-text dark:text-dark-subtle-text mt-1">Here's your business snapshot.</p>
       </MotionDiv>
 
@@ -187,7 +186,7 @@ const Dashboard = () => {
         variants={itemVariants} 
         initial="hidden" 
         animate="visible" 
-        className="bg-gradient-to-r from-primary/90 to-blue-600 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4"
+        className="bg-gradient-to-r from-zinc-900 to-zinc-700 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4"
       >
         <div className="text-center sm:text-left">
             <h2 className="text-lg font-medium opacity-90">Lifetime Performance</h2>
@@ -212,9 +211,9 @@ const Dashboard = () => {
         initial="hidden"
         animate="visible"
       >
-        <StatCard title="Today's Sales" value={formatCurrency(todaySales)} icon={<ShoppingBasketIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#4EA8FF" />
-        <StatCard title="This Week's Sales" value={formatCurrency(weekSales)} icon={<TrendingUpIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#34D399" />
-        <StatCard title="This Month's Profit" value={formatCurrency(monthProfit)} icon={<WalletIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#F472B6" />
+        <StatCard title="Today's Sales" value={formatCurrency(todaySales)} icon={<ShoppingBasketIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#18181b" />
+        <StatCard title="This Week's Sales" value={formatCurrency(weekSales)} icon={<TrendingUpIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#18181b" />
+        <StatCard title="This Month's Profit" value={formatCurrency(monthProfit)} icon={<WalletIcon className="w-6 h-6"/>} data={last7DaysChartData} dataKey="sales" color="#18181b" />
       </MotionDiv>
 
        {lowStockProducts.length > 0 && (
@@ -240,7 +239,7 @@ const Dashboard = () => {
               <p className="text-subtle-text dark:text-dark-subtle-text text-sm mb-4">An overview of your business performance.</p>
               <HealthScoreGuage score={shopHealthScore.score} />
               <p className="font-semibold mt-4">{shopHealthScore.status}</p>
-               <button onClick={() => navigate('/statistics')} className="mt-4 w-full bg-primary/10 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
+               <button onClick={() => navigate('/statistics')} className="mt-4 w-full bg-primary/10 text-primary dark:text-white dark:bg-white/10 font-bold py-2 px-4 rounded-lg hover:bg-primary/20 dark:hover:bg-white/20 transition-colors flex items-center justify-center gap-2">
                   View Full Statistics <StatsIcon className="w-5 h-5" />
                </button>
           </MotionDiv>
@@ -250,16 +249,16 @@ const Dashboard = () => {
                   <AreaChart data={last7DaysChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4EA8FF" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#4EA8FF" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#18181b" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#18181b" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <YAxis tick={{ fill: '#5A6474', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `${settings.currency}${value/1000}k`}/>
                   <Tooltip
                       contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)', border: '1px solid #E6EBF2', borderRadius: '0.75rem' }}
-                      cursor={{ stroke: '#4EA8FF', strokeWidth: 1, strokeDasharray: '3 3' }}
+                      cursor={{ stroke: '#18181b', strokeWidth: 1, strokeDasharray: '3 3' }}
                       formatter={(value: number) => [formatCurrency(value), "Sales"]} />
-                  <Area type="monotone" dataKey="sales" stroke="#4EA8FF" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+                  <Area type="monotone" dataKey="sales" stroke="#18181b" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
                   </AreaChart>
               </ResponsiveContainer>
           </MotionDiv>
@@ -290,7 +289,7 @@ const Dashboard = () => {
                   </div>
                   ))}
                   {(sales.length > 3 || expenses.length > 3) && (
-                      <Link to="/history" className="text-sm font-semibold text-primary hover:underline pt-2 block text-center">
+                      <Link to="/history" className="text-sm font-semibold text-primary dark:text-dark-on-surface hover:underline pt-2 block text-center">
                           View all activity &rarr;
                       </Link>
                   )}

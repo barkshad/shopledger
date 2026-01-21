@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useExpenses } from '../hooks/useExpenses';
@@ -130,7 +129,7 @@ const Statistics = () => {
   }
 
   const formatCurrency = (amount: number) => `${settings.currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  const PIE_COLORS = ['#4EA8FF', '#34D399', '#F472B6', '#FBBF24', '#A78BFA', '#60A5FA'];
+  const PIE_COLORS = ['#000000', '#27272a', '#3f3f46', '#52525b', '#71717a', '#a1a1aa'];
 
   return (
     <MotionDiv variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
@@ -147,15 +146,15 @@ const Statistics = () => {
                  <ResponsiveContainer width="100%" height={250}>
                     <AreaChart data={data.trends.trendChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                         <defs>
-                            <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#4EA8FF" stopOpacity={0.8}/><stop offset="95%" stopColor="#4EA8FF" stopOpacity={0}/></linearGradient>
-                            <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F472B6" stopOpacity={0.8}/><stop offset="95%" stopColor="#F472B6" stopOpacity={0}/></linearGradient>
+                            <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#000000" stopOpacity={0.8}/><stop offset="95%" stopColor="#000000" stopOpacity={0}/></linearGradient>
+                            <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#71717a" stopOpacity={0.8}/><stop offset="95%" stopColor="#71717a" stopOpacity={0}/></linearGradient>
                         </defs>
                         <XAxis dataKey="name" tick={{ fill: '#5A6474', fontSize: 10 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fill: '#5A6474', fontSize: 10 }} tickLine={false} axisLine={false} />
                         <Tooltip content={<CustomTooltip currency={settings.currency}/>} />
                         <Legend wrapperStyle={{fontSize: "12px"}}/>
-                        <Area type="monotone" dataKey="sales" stroke="#4EA8FF" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
-                        <Area type="monotone" dataKey="expenses" stroke="#F472B6" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenses)" />
+                        <Area type="monotone" dataKey="sales" stroke="#000000" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+                        <Area type="monotone" dataKey="expenses" stroke="#71717a" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenses)" />
                     </AreaChart>
                 </ResponsiveContainer>
             </StatInsightCard>
@@ -171,7 +170,7 @@ const Statistics = () => {
                      {data.topProducts.map((product, index) => (
                         <div key={index} className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-3">
-                                <span className="font-bold text-primary w-5">{index + 1}.</span>
+                                <span className="font-bold text-zinc-900 dark:text-zinc-100 w-5">{index + 1}.</span>
                                 <p className="font-semibold truncate">{product.name}</p>
                             </div>
                              <div className="text-right">
@@ -229,7 +228,7 @@ const Statistics = () => {
                                 const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
                                 return <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize="12px">{(percent * 100).toFixed(0)}%</text>;
                             }}>
-                            {data.paymentMethods.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[(index + 2) % PIE_COLORS.length]} />)}
+                            {data.paymentMethods.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[(index + 1) % PIE_COLORS.length]} />)}
                         </Pie>
                         <Tooltip formatter={(value: number) => [`${value} Sales`]} />
                         <Legend wrapperStyle={{fontSize: "12px"}}/>
@@ -242,11 +241,11 @@ const Statistics = () => {
                 <div className="h-full flex flex-col justify-around text-center">
                     <div>
                         <p className="text-subtle-text">Tomorrow's Estimated Sales</p>
-                        <p className="text-4xl font-bold text-primary">{formatCurrency(data.forecast.nextDay)}</p>
+                        <p className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">{formatCurrency(data.forecast.nextDay)}</p>
                     </div>
                     <div>
                         <p className="text-subtle-text">Next 7 Days Estimate</p>
-                        <p className="text-4xl font-bold text-primary">{formatCurrency(data.forecast.nextWeek)}</p>
+                        <p className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">{formatCurrency(data.forecast.nextWeek)}</p>
                     </div>
                     <p className="text-xs text-subtle-text">Based on a 7-day moving average. For planning purposes only.</p>
                 </div>
