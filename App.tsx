@@ -10,7 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import AnimatedPage from './components/AnimatedPage';
 import SplashScreen from './components/SplashScreen';
 import AuthPage from './components/AuthPage';
-import { ToastProvider, useToast } from './hooks/useToast';
+import { ToastProvider } from './hooks/useToast';
 import { useAuth } from './hooks/useAuth';
 import ToastContainer from './components/Toast';
 import AddExpense from './components/AddExpense';
@@ -26,12 +26,18 @@ import Spinner from './components/Spinner';
 
 const MotionDiv = motion.div as any;
 
-// Private Route Wrapper
-// Fixed: Made children optional to resolve TS error: Property 'children' is missing in type '{}' but required in type '{ children: React.ReactNode; }'
+// Intentional Session Gating
 const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
-  if (loading) return <div className="h-screen w-screen flex items-center justify-center bg-background dark:bg-dark-background"><Spinner /></div>;
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-background dark:bg-dark-background">
+        <Spinner />
+        <p className="mt-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Verifying Identity</p>
+      </div>
+    );
+  }
   
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -63,12 +69,13 @@ function AppContent() {
       key="main-app"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
       className="min-h-screen bg-background dark:bg-dark-background text-on-surface dark:text-dark-on-surface flex flex-col"
     >
       <ToastContainer />
       {!isAuthPage && user && <Header />}
-      <main className={`flex-grow ${!isAuthPage ? 'p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-28 md:pb-8' : 'w-full'}`}>
+      
+      <main className={`flex-grow ${!isAuthPage ? 'p-4 sm:p-8 max-w-7xl mx-auto w-full pb-28 md:pb-8' : 'w-full'}`}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/auth" element={<AnimatedPage><AuthPage /></AnimatedPage>} />
@@ -85,11 +92,11 @@ function AppContent() {
             <Route path="/admin" element={<PrivateRoute><AnimatedPage><AdminPanel /></AnimatedPage></PrivateRoute>} />
             <Route path="/search" element={<PrivateRoute><AnimatedPage><SearchResults /></AnimatedPage></PrivateRoute>} />
             
-            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
       </main>
+
       {showFab && <FAB />}
       {!isAuthPage && user && <BottomNav />}
     </MotionDiv>

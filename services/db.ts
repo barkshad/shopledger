@@ -29,19 +29,22 @@ const firebaseConfig = {
   measurementId: "G-B7S1JG176R"
 };
 
-// Initialize Firebase once
+// Singleton initialization pattern
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-export { auth, googleProvider };
+export { auth, googleProvider, db };
 
-const SALES_COLLECTION = 'sales';
-const EXPENSES_COLLECTION = 'expenses';
-const PRODUCTS_COLLECTION = 'products';
-const CUSTOMERS_COLLECTION = 'customers';
-const SETTINGS_COLLECTION = 'settings';
+const COLLECTIONS = {
+  SALES: 'sales',
+  EXPENSES: 'expenses',
+  PRODUCTS: 'products',
+  CUSTOMERS: 'customers',
+  SETTINGS: 'settings'
+};
+
 const GLOBAL_SETTINGS_ID = 'app_config';
 
 const mapDoc = <T,>(doc: QueryDocumentSnapshot<DocumentData>): T => ({
@@ -49,29 +52,26 @@ const mapDoc = <T,>(doc: QueryDocumentSnapshot<DocumentData>): T => ({
   id: doc.id,
 });
 
-// Settings Functions
+// Settings Operations
 export const getSettings = async (): Promise<AdminSettings | null> => {
-  const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_ID);
+  const docRef = doc(db, COLLECTIONS.SETTINGS, GLOBAL_SETTINGS_ID);
   const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return docSnap.data() as AdminSettings;
-  }
-  return null;
+  return docSnap.exists() ? (docSnap.data() as AdminSettings) : null;
 };
 
 export const updateSettings = async (settings: AdminSettings): Promise<void> => {
-  const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_ID);
+  const docRef = doc(db, COLLECTIONS.SETTINGS, GLOBAL_SETTINGS_ID);
   return setDoc(docRef, settings, { merge: true });
 };
 
-// Sales Functions
+// Sales Operations
 export const addSale = async (sale: Omit<Sale, 'id'>): Promise<string> => {
-  const docRef = await addDoc(collection(db, SALES_COLLECTION), sale);
+  const docRef = await addDoc(collection(db, COLLECTIONS.SALES), sale);
   return docRef.id;
 };
 
 export const getAllSales = async (): Promise<Sale[]> => {
-  const q = query(collection(db, SALES_COLLECTION), orderBy('date', 'desc'));
+  const q = query(collection(db, COLLECTIONS.SALES), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => mapDoc<Sale>(doc));
 };
@@ -79,29 +79,28 @@ export const getAllSales = async (): Promise<Sale[]> => {
 export const updateSale = async (sale: Sale): Promise<void> => {
   if (!sale.id) return;
   const { id, ...data } = sale;
-  const docRef = doc(db, SALES_COLLECTION, id);
-  return updateDoc(docRef, data as any);
+  return updateDoc(doc(db, COLLECTIONS.SALES, id), data as any);
 };
 
 export const deleteSale = async (id: string): Promise<void> => {
-  return deleteDoc(doc(db, SALES_COLLECTION, id));
+  return deleteDoc(doc(db, COLLECTIONS.SALES, id));
 };
 
 export const clearSales = async (): Promise<void> => {
-    const q = await getDocs(collection(db, SALES_COLLECTION));
-    const batch = writeBatch(db);
-    q.forEach(d => batch.delete(d.ref));
-    return batch.commit();
-}
+  const q = await getDocs(collection(db, COLLECTIONS.SALES));
+  const batch = writeBatch(db);
+  q.forEach(d => batch.delete(d.ref));
+  return batch.commit();
+};
 
-// Expenses Functions
+// Expense Operations
 export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<string> => {
-  const docRef = await addDoc(collection(db, EXPENSES_COLLECTION), expense);
+  const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
   return docRef.id;
 };
 
 export const getAllExpenses = async (): Promise<Expense[]> => {
-  const q = query(collection(db, EXPENSES_COLLECTION), orderBy('date', 'desc'));
+  const q = query(collection(db, COLLECTIONS.EXPENSES), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => mapDoc<Expense>(doc));
 };
@@ -109,58 +108,58 @@ export const getAllExpenses = async (): Promise<Expense[]> => {
 export const updateExpense = async (expense: Expense): Promise<void> => {
   if (!expense.id) return;
   const { id, ...data } = expense;
-  return updateDoc(doc(db, EXPENSES_COLLECTION, id), data as any);
+  return updateDoc(doc(db, COLLECTIONS.EXPENSES, id), data as any);
 };
 
 export const deleteExpense = async (id: string): Promise<void> => {
-  return deleteDoc(doc(db, EXPENSES_COLLECTION, id));
+  return deleteDoc(doc(db, COLLECTIONS.EXPENSES, id));
 };
 
 export const clearExpenses = async (): Promise<void> => {
-    const q = await getDocs(collection(db, EXPENSES_COLLECTION));
-    const batch = writeBatch(db);
-    q.forEach(d => batch.delete(d.ref));
-    return batch.commit();
-}
+  const q = await getDocs(collection(db, COLLECTIONS.EXPENSES));
+  const batch = writeBatch(db);
+  q.forEach(d => batch.delete(d.ref));
+  return batch.commit();
+};
 
-// Product Functions
+// Product Operations
 export const getAllProducts = async (): Promise<Product[]> => {
-  const querySnapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
+  const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
   return querySnapshot.docs.map(doc => mapDoc<Product>(doc));
 };
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
-  const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), product);
+  const docRef = await addDoc(collection(db, COLLECTIONS.PRODUCTS), product);
   return docRef.id;
 };
 
 export const updateProduct = async (product: Product): Promise<void> => {
   if (!product.id) return;
   const { id, ...data } = product;
-  return updateDoc(doc(db, PRODUCTS_COLLECTION, id), data as any);
+  return updateDoc(doc(db, COLLECTIONS.PRODUCTS, id), data as any);
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {
-  return deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
+  return deleteDoc(doc(db, COLLECTIONS.PRODUCTS, id));
 };
 
-// Customer Functions
+// Customer Operations
 export const getAllCustomers = async (): Promise<Customer[]> => {
-  const querySnapshot = await getDocs(collection(db, CUSTOMERS_COLLECTION));
+  const querySnapshot = await getDocs(collection(db, COLLECTIONS.CUSTOMERS));
   return querySnapshot.docs.map(doc => mapDoc<Customer>(doc));
 };
 
 export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<string> => {
-  const docRef = await addDoc(collection(db, CUSTOMERS_COLLECTION), customer);
+  const docRef = await addDoc(collection(db, COLLECTIONS.CUSTOMERS), customer);
   return docRef.id;
 };
 
 export const updateCustomer = async (customer: Customer): Promise<void> => {
   if (!customer.id) return;
   const { id, ...data } = customer;
-  return updateDoc(doc(db, CUSTOMERS_COLLECTION, id), data as any);
+  return updateDoc(doc(db, COLLECTIONS.CUSTOMERS, id), data as any);
 };
 
 export const deleteCustomer = async (id: string): Promise<void> => {
-  return deleteDoc(doc(db, CUSTOMERS_COLLECTION, id));
+  return deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, id));
 };

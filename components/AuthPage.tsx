@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { useNavigate, Navigate } from 'react-router-dom';
@@ -19,14 +19,15 @@ const AuthPage = () => {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
+  // Route protection
   if (user && !authLoading) {
     return <Navigate to="/" replace />;
   }
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      addToast('Valid email and password are required.', 'error');
+    if (!email.trim() || !password.trim()) {
+      addToast('Identifier and credential required.', 'error');
       return;
     }
 
@@ -34,19 +35,21 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         await login(email, password);
-        addToast('Session established.', 'success');
+        addToast('Authorization successful.', 'success');
       } else {
         await register(email, password);
-        addToast('Account provisioned successfully.', 'success');
+        addToast('Environment provisioned.', 'success');
       }
       navigate('/');
     } catch (error: any) {
-      console.error(error);
-      const msg = error.code === 'auth/user-not-found' 
-        ? 'Account not identified.' 
-        : error.code === 'auth/wrong-password' 
-        ? 'Invalid credentials.' 
-        : 'System authentication error.';
+      console.error("[AuthError]", error);
+      const code = error.code;
+      let msg = 'Authentication failure.';
+      if (code === 'auth/invalid-credential') msg = 'Invalid identifiers provided.';
+      else if (code === 'auth/user-not-found') msg = 'Account not recognized.';
+      else if (code === 'auth/wrong-password') msg = 'Incorrect credential.';
+      else if (code === 'auth/email-already-in-use') msg = 'Identifier already provisioned.';
+      
       addToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
@@ -56,169 +59,176 @@ const AuthPage = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleSubmitting(true);
     try {
-        await loginWithGoogle();
-        addToast('Authenticated via Google.', 'success');
-        navigate('/');
+      await loginWithGoogle();
+      addToast('Identity verified via Google.', 'success');
+      navigate('/');
     } catch (error: any) {
-        if (error.code !== 'auth/popup-closed-by-user') {
-            addToast('Third-party authentication failed.', 'error');
-        }
+      console.error("[GoogleAuthError]", error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        addToast('External identity provider failed.', 'error');
+      }
     } finally {
-        setIsGoogleSubmitting(false);
+      setIsGoogleSubmitting(false);
     }
   };
 
-  const productAttributes = [
-    "Atomic sales recording with local-first sync",
-    "Cloud-based secure financial reconciliation",
-    "Automated inventory health assessment",
-    "Professional reporting for stakeholders"
+  const systemsSummary = [
+    "Atomic transaction logging",
+    "Encrypted financial persistence",
+    "Real-time inventory synchronization",
+    "Automated performance reporting"
   ];
 
   return (
     <div className="min-h-screen w-full flex bg-background dark:bg-dark-background overflow-hidden font-sans">
-      {/* Visual Context Panel (Desktop Only) */}
+      {/* Informational Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-zinc-50 dark:bg-zinc-900 border-r border-border-color dark:border-dark-border-color items-center justify-center p-24">
-        <div className="max-w-md space-y-12">
-            <MotionDiv
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <div className="flex items-center gap-4 mb-10">
-                    <div className="bg-black dark:bg-white p-2.5 rounded-xl">
-                        <ShoppingCartIcon className="h-6 w-6 text-white dark:text-black" strokeWidth={2.5} />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight uppercase">ShopLedger</span>
-                </div>
-                <h1 className="text-4xl font-semibold leading-tight mb-6 text-on-surface dark:text-white">
-                    Deliberate tools for retail operations.
-                </h1>
-                <p className="text-subtle-text dark:text-dark-subtle-text text-lg leading-relaxed">
-                    A unified platform for tracking performance, managing stock, and securing your business data.
-                </p>
-            </MotionDiv>
-
-            <div className="space-y-6">
-                {productAttributes.map((attr, i) => (
-                    <MotionDiv 
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 + (i * 0.1) }}
-                        className="flex items-start gap-4 text-zinc-600 dark:text-zinc-400"
-                    >
-                        <CheckCircleIcon className="h-5 w-5 text-black dark:text-white mt-0.5 flex-shrink-0" />
-                        <span className="text-sm font-medium">{attr}</span>
-                    </MotionDiv>
-                ))}
+        <div className="max-w-md space-y-16">
+          <MotionDiv
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex items-center gap-4 mb-12">
+              <div className="bg-black dark:bg-white p-2.5 rounded-xl">
+                <ShoppingCartIcon className="h-6 w-6 text-white dark:text-black" strokeWidth={2.5} />
+              </div>
+              <span className="text-xl font-bold tracking-tight uppercase">ShopLedger</span>
             </div>
+            
+            <h1 className="text-5xl font-semibold leading-[1.1] mb-8 text-on-surface dark:text-white tracking-tight">
+              A deliberate platform for business operations.
+            </h1>
+            <p className="text-subtle-text dark:text-dark-subtle-text text-lg leading-relaxed">
+              Consolidate sales, stock management, and financial reporting into a single, high-performance environment.
+            </p>
+          </MotionDiv>
 
-            <div className="pt-8 border-t border-border-color dark:border-dark-border-color">
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Enterprise Ready</p>
-                <p className="text-xs text-zinc-500 mt-2">End-to-end encryption for all transaction data.</p>
-            </div>
+          <div className="space-y-6">
+            {systemsSummary.map((item, i) => (
+              <MotionDiv 
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * i, duration: 0.4 }}
+                className="flex items-start gap-4 text-zinc-600 dark:text-zinc-400"
+              >
+                <CheckCircleIcon className="h-5 w-5 text-black dark:text-white mt-1 flex-shrink-0" />
+                <span className="text-base font-medium">{item}</span>
+              </MotionDiv>
+            ))}
+          </div>
+
+          <div className="pt-12 border-t border-border-color dark:border-dark-border-color">
+            <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Deployment Tier: Enterprise</p>
+            <p className="text-[11px] text-zinc-500 mt-2">Data localized and synced with 256-bit encryption standards.</p>
+          </div>
         </div>
       </div>
 
-      {/* Action Panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16">
+      {/* Transactional Panel */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-20">
         <MotionDiv 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="w-full max-w-sm space-y-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-sm space-y-12"
         >
-          <div className="lg:hidden flex items-center gap-3 mb-12">
-             <div className="bg-black dark:bg-white p-2 rounded-lg">
-                 <ShoppingCartIcon className="h-5 w-5 text-white dark:text-black" />
-             </div>
-             <h2 className="text-lg font-bold tracking-tight uppercase">ShopLedger</h2>
+          <div className="lg:hidden flex items-center gap-3 mb-16">
+            <div className="bg-black dark:bg-white p-2 rounded-lg">
+              <ShoppingCartIcon className="h-5 w-5 text-white dark:text-black" />
+            </div>
+            <h2 className="text-lg font-bold tracking-tight uppercase">ShopLedger</h2>
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-on-surface dark:text-white tracking-tight">
-                {isLogin ? 'Sign in to your account' : 'Provision a new account'}
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold text-on-surface dark:text-white tracking-tight">
+              {isLogin ? 'Access Account' : 'Provision Account'}
             </h2>
-            <p className="text-sm text-subtle-text dark:text-dark-subtle-text">
-                {isLogin ? 'Provide your credentials to access the ledger.' : 'Enter details to initialize your business environment.'}
+            <p className="text-base text-subtle-text dark:text-dark-subtle-text">
+              {isLogin ? 'Enter valid credentials to continue.' : 'Initialize your business workspace.'}
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             <button
-                onClick={handleGoogleSignIn}
-                disabled={isGoogleSubmitting}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all shadow-soft disabled:opacity-50"
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleSubmitting}
+              className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-white dark:bg-zinc-800 border border-border-color dark:border-dark-border-color rounded-xl text-sm font-bold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all shadow-soft disabled:opacity-50"
             >
-                {isGoogleSubmitting ? (
-                    <div className="h-4 w-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
-                ) : (
-                    <>
-                        <GoogleIcon className="h-5 w-5" />
-                        <span>Continue with Google</span>
-                    </>
-                )}
+              {isGoogleSubmitting ? (
+                <div className="h-4 w-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
+              ) : (
+                <>
+                  <GoogleIcon className="h-5 w-5" />
+                  <span>Continue with Google Identity</span>
+                </>
+              )}
             </button>
 
             <div className="relative">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border-color dark:border-dark-border-color"></div></div>
-                <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold"><span className="px-4 bg-background dark:bg-dark-background text-zinc-400">Or use email</span></div>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border-color dark:border-dark-border-color"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-bold">
+                <span className="px-6 bg-background dark:bg-dark-background text-zinc-400">Standard Protocols</span>
+              </div>
             </div>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">Email Address</label>
-                    <input 
-                        type="email" 
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none"
-                        placeholder="name@company.com"
-                    />
-                </div>
+            <form onSubmit={handleEmailSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block ml-1">Account Identifier</label>
+                <input 
+                  type="email" 
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400"
+                  placeholder="name@organization.com"
+                />
+              </div>
 
-                <div className="space-y-1.5">
-                    <div className="flex items-center justify-between px-1">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Password</label>
-                        {isLogin && <button type="button" className="text-[10px] font-bold text-zinc-500 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest">Reset password</button>}
-                    </div>
-                    <input 
-                        type="password" 
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none"
-                        placeholder="••••••••"
-                    />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Security Credential</label>
+                  {isLogin && <button type="button" className="text-[10px] font-bold text-zinc-400 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest">Reset</button>}
                 </div>
+                <input 
+                  type="password" 
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400"
+                  placeholder="••••••••"
+                />
+              </div>
 
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold text-sm shadow-premium active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                    {isSubmitting ? (
-                        <div className="h-4 w-4 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
-                    ) : (
-                        <span>{isLogin ? 'Sign in' : 'Create account'}</span>
-                    )}
-                </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold text-sm shadow-premium active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <div className="h-4 w-4 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
+                ) : (
+                  <span>{isLogin ? 'Establish Session' : 'Provision Account'}</span>
+                )}
+              </button>
             </form>
           </div>
 
-          <div className="text-center pt-4">
+          <div className="text-center pt-8 border-t border-border-color dark:border-dark-border-color">
             <button 
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-xs font-bold text-zinc-500 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-xs font-bold text-zinc-500 hover:text-black dark:hover:text-white transition-colors uppercase tracking-[0.1em]"
             >
-                {isLogin ? "No account? Provision one here" : "Return to account sign-in"}
+              {isLogin ? "Requirement: New account access" : "Requirement: Existing account access"}
             </button>
           </div>
           
-          <div className="text-[10px] text-center text-zinc-400 space-y-1 leading-relaxed">
-            <p>Protected by platform security standards.</p>
-            <p>© {new Date().getFullYear()} ShopLedger Retail Systems.</p>
+          <div className="text-[10px] text-center text-zinc-400 space-y-2 leading-relaxed">
+            <p>Authorized access only. Verified by ShopLedger Systems Protocol.</p>
+            <p>© {new Date().getFullYear()} ShopLedger Platform.</p>
           </div>
         </MotionDiv>
       </div>
