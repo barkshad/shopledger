@@ -16,7 +16,7 @@ import {
   DocumentData,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { Sale, Expense, Product, Customer, AdminSettings } from '../types';
 
 const firebaseConfig = {
@@ -33,8 +33,9 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
-export { auth };
+export { auth, googleProvider };
 
 const SALES_COLLECTION = 'sales';
 const EXPENSES_COLLECTION = 'expenses';

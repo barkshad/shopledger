@@ -4,10 +4,11 @@ import {
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
+  signInWithPopup,
   signOut, 
   User 
 } from 'firebase/auth';
-import { auth } from '../services/db';
+import { auth, googleProvider } from '../services/db';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -23,7 +24,8 @@ export const useAuth = () => {
 
   const login = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
   const register = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
+  const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
   const logout = () => signOut(auth);
 
-  return { user, loading, login, logout, register };
+  return { user, loading, login, logout, register, loginWithGoogle };
 };

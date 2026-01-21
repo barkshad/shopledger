@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ShoppingCartIcon, SparklesIcon, CheckCircleIcon, ArrowUpRightIcon } from './icons';
+import { ShoppingCartIcon, CheckCircleIcon, ArrowUpRightIcon, GoogleIcon } from './icons';
 
 const MotionDiv = motion.div as any;
 
@@ -13,7 +13,9 @@ const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, register, user, loading: authLoading } = useAuth();
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  
+  const { login, register, loginWithGoogle, user, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -22,7 +24,7 @@ const AuthPage = () => {
     return <Navigate to="/" replace />;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       addToast('Please enter both email and password.', 'error');
@@ -49,6 +51,22 @@ const AuthPage = () => {
       addToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleSubmitting(true);
+    try {
+        await loginWithGoogle();
+        addToast('Signed in with Google successfully!', 'success');
+        navigate('/');
+    } catch (error: any) {
+        console.error(error);
+        if (error.code !== 'auth/popup-closed-by-user') {
+            addToast('Google Sign-in failed. Please try again.', 'error');
+        }
+    } finally {
+        setIsGoogleSubmitting(false);
     }
   };
 
@@ -141,7 +159,28 @@ const AuthPage = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Google Auth Button */}
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleSubmitting}
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-on-surface dark:text-white font-bold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all shadow-sm disabled:opacity-70"
+          >
+            {isGoogleSubmitting ? (
+                <div className="h-5 w-5 border-2 border-zinc-400 border-t-zinc-900 rounded-full animate-spin" />
+            ) : (
+                <>
+                    <GoogleIcon className="h-5 w-5" />
+                    <span>{isLogin ? 'Sign in with Google' : 'Sign up with Google'}</span>
+                </>
+            )}
+          </button>
+
+          <div className="relative">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200 dark:border-zinc-800"></div></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="px-4 bg-background dark:bg-dark-background text-subtle-text font-bold">Or continue with email</span></div>
+          </div>
+
+          <form onSubmit={handleEmailSubmit} className="space-y-5">
             <div className="space-y-1">
               <label className="text-xs font-bold uppercase tracking-wider text-subtle-text ml-1">Email Address</label>
               <input 
@@ -184,11 +223,6 @@ const AuthPage = () => {
                 )}
             </button>
           </form>
-
-          <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200 dark:border-zinc-800"></div></div>
-              <div className="relative flex justify-center text-sm uppercase"><span className="px-4 bg-background dark:bg-dark-background text-subtle-text font-medium">Or</span></div>
-          </div>
 
           <div className="text-center">
             <button 
