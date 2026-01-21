@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ShoppingCartIcon, CheckCircleIcon, GoogleIcon } from './icons';
+import { ShoppingCartIcon, CheckCircleIcon } from './icons';
 
 const MotionDiv = motion.div as any;
 
@@ -13,9 +13,8 @@ const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   
-  const { login, register, loginWithGoogle, user, loading: authLoading } = useAuth();
+  const { login, register, user, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -53,22 +52,6 @@ const AuthPage = () => {
       addToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleSubmitting(true);
-    try {
-      await loginWithGoogle();
-      addToast('Identity verified via Google.', 'success');
-      navigate('/');
-    } catch (error: any) {
-      console.error("[GoogleAuthError]", error);
-      if (error.code !== 'auth/popup-closed-by-user') {
-        addToast('External identity provider failed.', 'error');
-      }
-    } finally {
-      setIsGoogleSubmitting(false);
     }
   };
 
@@ -150,72 +133,46 @@ const AuthPage = () => {
             </p>
           </div>
 
-          <div className="space-y-8">
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleSubmitting}
-              className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-white dark:bg-zinc-800 border border-border-color dark:border-dark-border-color rounded-xl text-sm font-bold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all shadow-soft disabled:opacity-50"
-            >
-              {isGoogleSubmitting ? (
-                <div className="h-4 w-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
-              ) : (
-                <>
-                  <GoogleIcon className="h-5 w-5" />
-                  <span>Continue with Google Identity</span>
-                </>
-              )}
-            </button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border-color dark:border-dark-border-color"></div>
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-bold">
-                <span className="px-6 bg-background dark:bg-dark-background text-zinc-400">Standard Protocols</span>
-              </div>
+          <form onSubmit={handleEmailSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block ml-1">Account Identifier</label>
+              <input 
+                type="email" 
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400"
+                placeholder="name@organization.com"
+              />
             </div>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block ml-1">Account Identifier</label>
-                <input 
-                  type="email" 
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400"
-                  placeholder="name@organization.com"
-                />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Security Credential</label>
+                {isLogin && <button type="button" className="text-[10px] font-bold text-zinc-400 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest">Reset</button>}
               </div>
+              <input 
+                type="password" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400"
+                placeholder="••••••••"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between px-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Security Credential</label>
-                  {isLogin && <button type="button" className="text-[10px] font-bold text-zinc-400 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest">Reset</button>}
-                </div>
-                <input 
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold text-sm shadow-premium active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <div className="h-4 w-4 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
-                ) : (
-                  <span>{isLogin ? 'Establish Session' : 'Provision Account'}</span>
-                )}
-              </button>
-            </form>
-          </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold text-sm shadow-premium active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <div className="h-4 w-4 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
+              ) : (
+                <span>{isLogin ? 'Establish Session' : 'Provision Account'}</span>
+              )}
+            </button>
+          </form>
 
           <div className="text-center pt-8 border-t border-border-color dark:border-dark-border-color">
             <button 

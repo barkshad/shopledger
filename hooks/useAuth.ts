@@ -4,11 +4,10 @@ import {
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithPopup,
   signOut, 
   User 
 } from 'firebase/auth';
-import { auth, googleProvider } from '../services/db';
+import { auth } from '../services/db';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -31,17 +30,7 @@ export const useAuth = () => {
   
   const register = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
   
-  const loginWithGoogle = async () => {
-    try {
-      return await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      // In restricted environments, popup might be blocked. 
-      // Redirect could be a fallback, but Popup is standard for Web apps.
-      throw error;
-    }
-  };
-  
   const logout = () => signOut(auth);
 
-  return { user, loading, login, logout, register, loginWithGoogle };
+  return { user, loading, login, logout, register };
 };
