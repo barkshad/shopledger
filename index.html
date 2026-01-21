@@ -7,6 +7,14 @@
     <title>ShopLedger – Simple Sales Recorder</title>
     <meta name="description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance. All data is stored locally in your browser." />
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#000000" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ShopLedger" />
+    <link rel="apple-touch-icon" href="https://picsum.photos/id/2/192/192" />
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="ShopLedger – Simple Sales Recorder" />
@@ -64,26 +72,35 @@
         },
       }
     </script>
-  <script type="importmap">
-{
-  "imports": {
-    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "idb": "https://aistudiocdn.com/idb@^8.0.3",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.2.12",
-    "nanoid": "https://aistudiocdn.com/nanoid@^5.1.6",
-    "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
-    "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+        "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "idb": "https://aistudiocdn.com/idb@^8.0.3",
+        "framer-motion": "https://aistudiocdn.com/framer-motion@^11.2.12",
+        "nanoid": "https://aistudiocdn.com/nanoid@^5.1.6",
+        "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
+        "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+      }
+    }
+    </script>
 </head>
   <body class="bg-background text-on-surface dark:bg-dark-background dark:text-dark-on-surface transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered', reg))
+            .catch(err => console.error('Service Worker registration failed', err));
+        });
+      }
+    </script>
   </body>
 </html>

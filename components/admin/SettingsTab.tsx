@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useAdminSettings } from '../../hooks/useAdminSettings';
 import { useToast } from '../../hooks/useToast';
+import { usePWA } from '../../hooks/usePWA';
+import { DownloadIcon } from '../icons';
 
 const SettingsTab: React.FC<{ logAction: (message: string) => void }> = ({ logAction }) => {
     const { settings, updateSettings } = useAdminSettings();
     const { addToast } = useToast();
+    const { isInstallable, installApp } = usePWA();
 
     const [currentKey, setCurrentKey] = useState('');
     const [newKey, setNewKey] = useState('');
@@ -37,6 +40,22 @@ const SettingsTab: React.FC<{ logAction: (message: string) => void }> = ({ logAc
     return (
         <div className="space-y-8">
             <h2 className="text-2xl font-bold">Admin Settings</h2>
+
+            {/* PWA Installation */}
+            {isInstallable && (
+                <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h3 className="font-bold">Install ShopLedger</h3>
+                        <p className="text-sm text-subtle-text">Download this app for offline use and faster access.</p>
+                    </div>
+                    <button 
+                        onClick={installApp}
+                        className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg hover:bg-zinc-800 transition-all"
+                    >
+                        <DownloadIcon className="h-5 w-5" /> Install App
+                    </button>
+                </div>
+            )}
 
             {/* General Settings */}
             <div className="space-y-4">
