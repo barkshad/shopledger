@@ -94,11 +94,24 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
+      /**
+       * Robust Service Worker Registration
+       * Standard relative registration can fail in sandboxed previews.
+       * We use a direct relative path and handle common errors.
+       */
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered', reg))
-            .catch(err => console.error('Service Worker registration failed', err));
+          // Register using a path relative to the current page.
+          // This is the most reliable way in browsers.
+          navigator.serviceWorker.register('./sw.js', { scope: './' })
+            .then(reg => {
+              console.log('Service Worker registered successfully with scope:', reg.scope);
+            })
+            .catch(err => {
+              // If registration fails, it's often due to origin mismatch in the previewer.
+              // We log it but the app will continue to function normally.
+              console.warn('Service Worker registration skipped or failed:', err.message);
+            });
         });
       }
     </script>

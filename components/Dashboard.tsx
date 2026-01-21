@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, YAxis, Tooltip } from 'recharts';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSales } from '../hooks/useSales';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAdminSettings } from '../hooks/useAdminSettings';
+import { usePWA } from '../hooks/usePWA';
 import StatCard from './StatCard';
 import { getStartOfWeek, getStartOfMonth } from '../utils/dateUtils';
 import Spinner from './Spinner';
@@ -23,7 +24,9 @@ import {
     PlusCircleIcon,
     GaugeIcon,
     StatsIcon,
-    AlertTriangleIcon
+    AlertTriangleIcon,
+    DownloadIcon,
+    CancelIcon
 } from './icons';
 import { calculateHealthScore } from '../utils/statsUtils';
 
@@ -88,8 +91,10 @@ const Dashboard = () => {
   const { sales, loading: salesLoading } = useSales();
   const { expenses, loading: expensesLoading } = useExpenses();
   const { settings } = useAdminSettings();
+  const { isInstallable, installApp } = usePWA();
   const navigate = useNavigate();
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
 
   useEffect(() => {
       const checkStock = async () => {
@@ -97,7 +102,7 @@ const Dashboard = () => {
           setLowStockProducts(allProducts.filter(p => p.stock <= p.minStock));
       };
       checkStock();
-  }, [sales]); // Re-check when sales change
+  }, [sales]);
 
   const {
     todaySales,
@@ -114,7 +119,6 @@ const Dashboard = () => {
     const startOfWeek = getStartOfWeek(now).getTime();
     const startOfMonth = getStartOfMonth(now).getTime();
     
-    // Sales Stats
     const todaySales = sales
       .filter(s => new Date(s.date).getTime() >= startOfToday)
       .reduce((sum, s) => sum + s.total, 0);
@@ -123,7 +127,6 @@ const Dashboard = () => {
       .filter(s => new Date(s.date).getTime() >= startOfWeek)
       .reduce((sum, s) => sum + s.total, 0);
       
-    // Profit Stats
     const monthSalesTotal = sales
       .filter(s => new Date(s.date).getTime() >= startOfMonth)
       .reduce((sum, s) => sum + s.total, 0);
@@ -134,7 +137,6 @@ const Dashboard = () => {
       
     const monthProfit = monthSalesTotal - monthExpensesTotal;
     
-    // Chart Data (Last 7 Days Sparkline)
     const last7Days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - i);
@@ -152,7 +154,6 @@ const Dashboard = () => {
         sales: salesByDay[date] || 0,
     }));
     
-    // Recent Activity
     const mappedSales = sales.slice(0, 3).map(s => ({ ...s, type: 'sale', title: s.itemName, value: s.total, photo: s.photo, date: new Date(s.date)}));
     const mappedExpenses = expenses.slice(0, 3).map(e => ({ ...e, type: 'expense', title: e.name, value: e.amount, photo: e.receiptPhoto, date: new Date(e.date)}));
     const recentActivity = [...mappedSales, ...mappedExpenses]
@@ -161,7 +162,6 @@ const Dashboard = () => {
         
     const shopHealthScore = calculateHealthScore(sales, expenses);
 
-    // Lifetime Stats (All existing data)
     const allTimeSalesCount = sales.length;
     const allTimeRevenue = sales.reduce((sum, s) => sum + s.total, 0);
 
@@ -176,10 +176,50 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
-      <MotionDiv variants={itemVariants} initial="hidden" animate="visible">
-        <h1 className="text-3xl font-bold text-on-surface dark:text-dark-on-surface">Welcome back 👋</h1>
-        <p className="text-subtle-text dark:text-dark-subtle-text mt-1">Here's your business snapshot.</p>
-      </MotionDiv>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <MotionDiv variants={itemVariants} initial="hidden" animate="visible">
+            <h1 className="text-3xl font-bold text-on-surface dark:text-dark-on-surface">Welcome back 👋</h1>
+            <p className="text-subtle-text dark:text-dark-subtle-text mt-1">Here's your business snapshot.</p>
+        </MotionDiv>
+      </div>
+
+      {/* PWA Install Banner */}
+      <AnimatePresence>
+        {isInstallable && showInstallBanner && (
+            <MotionDiv
+                initial={{ opacity: 0, height: 0, y: -20 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -20 }}
+                className="overflow-hidden"
+            >
+                <div className="bg-zinc-900 dark:bg-zinc-100 rounded-2xl p-5 text-white dark:text-zinc-900 shadow-glow flex flex-col sm:flex-row items-center justify-between gap-4 border border-zinc-800 dark:border-zinc-200">
+                    <div className="flex items-center gap-4 text-center sm:text-left">
+                        <div className="p-3 bg-white/10 dark:bg-zinc-900/10 rounded-xl">
+                            <DownloadIcon className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg">Download ShopLedger</h3>
+                            <p className="text-sm opacity-80">Install for offline access and better performance.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <button 
+                            onClick={installApp}
+                            className="flex-1 sm:flex-none px-6 py-2.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl font-bold hover:bg-zinc-100 transition-colors shadow-lg"
+                        >
+                            Install Now
+                        </button>
+                        <button 
+                            onClick={() => setShowInstallBanner(false)}
+                            className="p-2.5 bg-white/10 dark:bg-zinc-900/10 rounded-xl hover:bg-white/20 transition-colors"
+                        >
+                            <CancelIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                </div>
+            </MotionDiv>
+        )}
+      </AnimatePresence>
 
       {/* Lifetime Performance Card */}
       <MotionDiv 
