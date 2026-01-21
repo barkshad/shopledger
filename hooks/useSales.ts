@@ -12,8 +12,6 @@ export const useSales = () => {
     try {
       setLoading(true);
       const allSales = await db.getAllSales();
-      // Sort sales by date descending
-      allSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setSales(allSales);
       setError(null);
     } catch (e) {
@@ -42,7 +40,7 @@ export const useSales = () => {
     await refreshSales();
   };
 
-  const deleteSale = async (id: number) => {
+  const deleteSale = async (id: string) => {
     await db.deleteSale(id);
     await refreshSales();
   };

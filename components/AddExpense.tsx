@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import { compressImage } from '../utils/imageUtils';
-import { CreditCardIcon } from './icons';
+import { uploadToCloudinary } from '../services/cloudinary';
+import { CreditCardIcon, TrashIcon } from './icons';
 
 const EXPENSE_CATEGORIES = ["Stock Purchase", "Transport", "Utilities", "Rent", "Salaries", "Miscellaneous"];
 
@@ -17,26 +19,22 @@ const AddExpense = () => {
   const [amount, setAmount] = useState(0);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
-  const [receiptPhoto, setReceiptPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        const compressedBase64 = await compressImage(file);
-        setPhotoPreview(compressedBase64);
-        setReceiptPhoto(compressedBase64);
-      } catch (error) {
-        console.error("Failed to compress image:", error);
-        addToast("Could not process image.", "error");
-      }
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
   const removePhoto = () => {
-    setReceiptPhoto(null);
+    setPhotoFile(null);
     setPhotoPreview(null);
   }
 
@@ -49,13 +47,24 @@ const AddExpense = () => {
     
     setIsSubmitting(true);
     try {
+        let cloudinaryData = { secure_url: undefined, public_id: undefined };
+        if (photoFile && settings.isPhotoSavingEnabled) {
+            addToast("Uploading receipt to cloud...", "info");
+            const compressed = await compressImage(photoFile);
+            const res = await fetch(compressed);
+            const blob = await res.blob();
+            const uploadRes = await uploadToCloudinary(blob);
+            cloudinaryData = { secure_url: uploadRes.secure_url as any, public_id: uploadRes.public_id as any };
+        }
+
         const expenseData = {
             name,
             category,
             amount,
             date: new Date(date).toISOString(),
             note,
-            receiptPhoto: (settings.isPhotoSavingEnabled && receiptPhoto) ? receiptPhoto : undefined,
+            receiptPhoto: cloudinaryData.secure_url,
+            cloudinaryId: cloudinaryData.public_id,
         };
         await addExpense(expenseData);
 
@@ -113,22 +122,24 @@ const AddExpense = () => {
           
           {settings.isPhotoSavingEnabled && (
             <div>
-              <label className="block text-sm font-medium text-on-surface">Receipt Photo</label>
+              <label className="block text-sm font-medium text-on-surface">Receipt Photo (Cloud Upload)</label>
               <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border-color px-6 py-10">
                   <div className="text-center">
                       {photoPreview ? (
-                          <img src={photoPreview} alt="Receipt Preview" className="mx-auto h-24 w-24 object-cover rounded-md" />
+                          <div className="relative">
+                            <img src={photoPreview} alt="Receipt Preview" className="mx-auto h-32 w-32 object-cover rounded-md" />
+                            <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"><TrashIcon className="h-4 w-4"/></button>
+                          </div>
                       ) : (
                           <CreditCardIcon className="mx-auto h-12 w-12 text-gray-300" />
                       )}
-                      <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                          <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-blue-500">
-                              <span>{photoPreview ? 'Change photo' : 'Take or upload photo'}</span>
+                      <div className="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
+                          <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-zinc-800">
+                              <span>{photoPreview ? 'Change receipt' : 'Take or upload receipt'}</span>
                               <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange}/>
                           </label>
                       </div>
-                      <p className="text-xs leading-5 text-gray-600">PNG, JPG, up to 10MB</p>
-                      {photoPreview && <button type="button" onClick={removePhoto} className="mt-2 text-xs text-red-500 hover:underline">Remove photo</button>}
+                      <p className="text-xs leading-5 text-gray-600">Synced to Cloudinary</p>
                   </div>
               </div>
             </div>
@@ -143,10 +154,10 @@ const AddExpense = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-primary text-on-primary font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-primary text-on-primary font-bold py-3 px-4 rounded-lg shadow-md hover:bg-zinc-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>}
-            {isSubmitting ? 'Saving...' : 'Save Expense'}
+            {isSubmitting ? 'Uploading to Cloud...' : 'Save Expense'}
           </button>
         </form>
       </div>

@@ -1,7 +1,8 @@
 {
   "name": "ShopLedger",
-  "description": "A simple yet smart sales recording app for shop owners to track daily income and sales performance. All data is stored locally in your browser.",
+  "description": "A simple yet smart sales recording app for shop owners. Securely syncs your sales, products, and receipts using Firestore and Cloudinary.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

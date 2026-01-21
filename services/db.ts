@@ -1,178 +1,142 @@
 
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  orderBy, 
+  writeBatch,
+  DocumentData,
+  QueryDocumentSnapshot
+} from 'firebase/firestore';
 import { Sale, Expense, Product, Customer } from '../types';
 
-const DB_NAME = 'ShopLedgerDB';
-const DB_VERSION = 4;
-const SALES_STORE_NAME = 'sales';
-const EXPENSES_STORE_NAME = 'expenses';
-const PRODUCTS_STORE_NAME = 'products';
-const CUSTOMERS_STORE_NAME = 'customers';
-
-
-interface ShopLedgerDB extends DBSchema {
-  sales: {
-    key: number;
-    value: Sale;
-    indexes: { 'date': string; 'itemName': string; 'paymentMethod': string; 'transactionId': string };
-  };
-  expenses: {
-    key: number;
-    value: Expense;
-    indexes: { 'date': string; 'category': string };
-  };
-  products: {
-    key: number;
-    value: Product;
-    indexes: { 'name': string; 'barcode': string };
-  };
-  customers: {
-    key: number;
-    value: Customer;
-    indexes: { 'name': string; 'phone': string };
-  };
-}
-
-let dbPromise: Promise<IDBPDatabase<ShopLedgerDB>> | null = null;
-
-const getDb = () => {
-  if (!dbPromise) {
-    dbPromise = openDB<ShopLedgerDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion, newVersion, transaction) {
-        if (oldVersion < 1) {
-            const store = db.createObjectStore(SALES_STORE_NAME, {
-              keyPath: 'id',
-              autoIncrement: true,
-            });
-            store.createIndex('date', 'date');
-            store.createIndex('itemName', 'itemName');
-        }
-        if (oldVersion < 2) {
-            const store = db.createObjectStore(EXPENSES_STORE_NAME, {
-                keyPath: 'id',
-                autoIncrement: true,
-            });
-            store.createIndex('date', 'date');
-            store.createIndex('category', 'category');
-        }
-        if (oldVersion < 3) {
-            const store = transaction.objectStore(SALES_STORE_NAME);
-            store.createIndex('paymentMethod', 'paymentMethod');
-        }
-        if (oldVersion < 4) {
-            const salesStore = transaction.objectStore(SALES_STORE_NAME);
-            salesStore.createIndex('transactionId', 'transactionId');
-
-            const productStore = db.createObjectStore(PRODUCTS_STORE_NAME, {
-                keyPath: 'id',
-                autoIncrement: true,
-            });
-            productStore.createIndex('name', 'name');
-            productStore.createIndex('barcode', 'barcode', { unique: true });
-
-            const customerStore = db.createObjectStore(CUSTOMERS_STORE_NAME, {
-                keyPath: 'id',
-                autoIncrement: true,
-            });
-            customerStore.createIndex('name', 'name');
-            customerStore.createIndex('phone', 'phone', { unique: true });
-        }
-      },
-    });
-  }
-  return dbPromise;
+const firebaseConfig = {
+  apiKey: "AIzaSyA6Q7AJYVqBw7LPA9ahAs4CVxEG4QrOgnY",
+  authDomain: "shopledger-ebbce.firebaseapp.com",
+  projectId: "shopledger-ebbce",
+  storageBucket: "shopledger-ebbce.firebasestorage.app",
+  messagingSenderId: "98699073404",
+  appId: "1:98699073404:web:d5d9afbcb1dc43bab276f9",
+  measurementId: "G-B7S1JG176R"
 };
 
+// Initialize Firebase once
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
+
+const SALES_COLLECTION = 'sales';
+const EXPENSES_COLLECTION = 'expenses';
+const PRODUCTS_COLLECTION = 'products';
+const CUSTOMERS_COLLECTION = 'customers';
+
+const mapDoc = <T,>(doc: QueryDocumentSnapshot<DocumentData>): T => ({
+  ...(doc.data() as T),
+  id: doc.id,
+});
+
 // Sales Functions
-export const addSale = async (sale: Omit<Sale, 'id'>): Promise<number> => {
-  const db = await getDb();
-  return db.add(SALES_STORE_NAME, sale as Sale);
+export const addSale = async (sale: Omit<Sale, 'id'>): Promise<string> => {
+  const docRef = await addDoc(collection(db, SALES_COLLECTION), sale);
+  return docRef.id;
 };
 
 export const getAllSales = async (): Promise<Sale[]> => {
-  const db = await getDb();
-  return db.getAll(SALES_STORE_NAME);
+  const q = query(collection(db, SALES_COLLECTION), orderBy('date', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => mapDoc<Sale>(doc));
 };
 
-export const updateSale = async (sale: Sale): Promise<number> => {
-  const db = await getDb();
-  return db.put(SALES_STORE_NAME, sale);
+export const updateSale = async (sale: Sale): Promise<void> => {
+  if (!sale.id) return;
+  const { id, ...data } = sale;
+  const docRef = doc(db, SALES_COLLECTION, id);
+  return updateDoc(docRef, data as any);
 };
 
-export const deleteSale = async (id: number): Promise<void> => {
-  const db = await getDb();
-  return db.delete(SALES_STORE_NAME, id);
+export const deleteSale = async (id: string): Promise<void> => {
+  return deleteDoc(doc(db, SALES_COLLECTION, id));
 };
 
 export const clearSales = async (): Promise<void> => {
-    const db = await getDb();
-    return db.clear(SALES_STORE_NAME);
+    const q = await getDocs(collection(db, SALES_COLLECTION));
+    const batch = writeBatch(db);
+    q.forEach(d => batch.delete(d.ref));
+    return batch.commit();
 }
 
 // Expenses Functions
-export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<number> => {
-  const db = await getDb();
-  return db.add(EXPENSES_STORE_NAME, expense as Expense);
+export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<string> => {
+  const docRef = await addDoc(collection(db, EXPENSES_COLLECTION), expense);
+  return docRef.id;
 };
 
 export const getAllExpenses = async (): Promise<Expense[]> => {
-  const db = await getDb();
-  return db.getAll(EXPENSES_STORE_NAME);
+  const q = query(collection(db, EXPENSES_COLLECTION), orderBy('date', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => mapDoc<Expense>(doc));
 };
 
-export const updateExpense = async (expense: Expense): Promise<number> => {
-  const db = await getDb();
-  return db.put(EXPENSES_STORE_NAME, expense);
+export const updateExpense = async (expense: Expense): Promise<void> => {
+  if (!expense.id) return;
+  const { id, ...data } = expense;
+  return updateDoc(doc(db, EXPENSES_COLLECTION, id), data as any);
 };
 
-export const deleteExpense = async (id: number): Promise<void> => {
-  const db = await getDb();
-  return db.delete(EXPENSES_STORE_NAME, id);
+export const deleteExpense = async (id: string): Promise<void> => {
+  return deleteDoc(doc(db, EXPENSES_COLLECTION, id));
 };
 
 export const clearExpenses = async (): Promise<void> => {
-    const db = await getDb();
-    return db.clear(EXPENSES_STORE_NAME);
+    const q = await getDocs(collection(db, EXPENSES_COLLECTION));
+    const batch = writeBatch(db);
+    q.forEach(d => batch.delete(d.ref));
+    return batch.commit();
 }
 
 // Product Functions
 export const getAllProducts = async (): Promise<Product[]> => {
-  const db = await getDb();
-  return db.getAll(PRODUCTS_STORE_NAME);
+  const querySnapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
+  return querySnapshot.docs.map(doc => mapDoc<Product>(doc));
 };
 
-export const addProduct = async (product: Omit<Product, 'id'>): Promise<number> => {
-  const db = await getDb();
-  return db.add(PRODUCTS_STORE_NAME, product as Product);
+export const addProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
+  const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), product);
+  return docRef.id;
 };
 
-export const updateProduct = async (product: Product): Promise<number> => {
-  const db = await getDb();
-  return db.put(PRODUCTS_STORE_NAME, product);
+export const updateProduct = async (product: Product): Promise<void> => {
+  if (!product.id) return;
+  const { id, ...data } = product;
+  return updateDoc(doc(db, PRODUCTS_COLLECTION, id), data as any);
 };
 
-export const deleteProduct = async (id: number): Promise<void> => {
-  const db = await getDb();
-  return db.delete(PRODUCTS_STORE_NAME, id);
+export const deleteProduct = async (id: string): Promise<void> => {
+  return deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
 };
 
 // Customer Functions
 export const getAllCustomers = async (): Promise<Customer[]> => {
-  const db = await getDb();
-  return db.getAll(CUSTOMERS_STORE_NAME);
+  const querySnapshot = await getDocs(collection(db, CUSTOMERS_COLLECTION));
+  return querySnapshot.docs.map(doc => mapDoc<Customer>(doc));
 };
 
-export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<number> => {
-  const db = await getDb();
-  return db.add(CUSTOMERS_STORE_NAME, customer as Customer);
+export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<string> => {
+  const docRef = await addDoc(collection(db, CUSTOMERS_COLLECTION), customer);
+  return docRef.id;
 };
 
-export const updateCustomer = async (customer: Customer): Promise<number> => {
-  const db = await getDb();
-  return db.put(CUSTOMERS_STORE_NAME, customer);
+export const updateCustomer = async (customer: Customer): Promise<void> => {
+  if (!customer.id) return;
+  const { id, ...data } = customer;
+  return updateDoc(doc(db, CUSTOMERS_COLLECTION, id), data as any);
 };
 
-export const deleteCustomer = async (id: number): Promise<void> => {
-  const db = await getDb();
-  return db.delete(CUSTOMERS_STORE_NAME, id);
+export const deleteCustomer = async (id: string): Promise<void> => {
+  return deleteDoc(doc(db, CUSTOMERS_COLLECTION, id));
 };

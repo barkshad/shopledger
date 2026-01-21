@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Expense } from '../types';
 import * as db from '../services/db';
@@ -11,8 +12,6 @@ export const useExpenses = () => {
     try {
       setLoading(true);
       const allExpenses = await db.getAllExpenses();
-      // Sort expenses by date descending
-      allExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setExpenses(allExpenses);
       setError(null);
     } catch (e) {
@@ -37,7 +36,7 @@ export const useExpenses = () => {
     await refreshExpenses();
   };
 
-  const deleteExpense = async (id: number) => {
+  const deleteExpense = async (id: string) => {
     await db.deleteExpense(id);
     await refreshExpenses();
   };

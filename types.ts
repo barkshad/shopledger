@@ -1,35 +1,36 @@
 
 export interface Sale {
-  id?: number;
+  id?: string;
   itemName: string;
   quantity: number;
   price: number;
   total: number;
   paymentMethod: string;
   date: string; // ISO string format
-  photo?: string; // Base64 encoded image string
+  photo?: string; // Cloudinary URL
+  cloudinaryId?: string; // Cloudinary public_id
   notes?: string;
-  // New fields
-  productId?: number;
-  customerId?: number;
+  productId?: string;
+  customerId?: string;
   salesperson?: string;
-  discount?: number; // Amount
-  paymentDetails?: string; // JSON string for split payments
-  transactionId?: string; // To group items in a cart
+  discount?: number;
+  paymentDetails?: string; 
+  transactionId?: string; 
 }
 
 export interface Expense {
-  id?: number;
+  id?: string;
   name: string;
   category: string;
   amount: number;
   date: string; // ISO string format
   note?: string;
-  receiptPhoto?: string; // Base64 encoded image string
+  receiptPhoto?: string; // Cloudinary URL
+  cloudinaryId?: string; // Cloudinary public_id
 }
 
 export interface Product {
-  id?: number;
+  id?: string;
   name: string;
   barcode?: string;
   price: number;
@@ -37,10 +38,12 @@ export interface Product {
   stock: number;
   minStock: number;
   category?: string;
+  photo?: string;
+  cloudinaryId?: string;
 }
 
 export interface Customer {
-  id?: number;
+  id?: string;
   name: string;
   phone?: string;
   email?: string;

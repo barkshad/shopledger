@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
-import { SaveIcon, PackageIcon, CreditCardIcon, DollarSignIcon, ListIcon, CalendarIcon } from './icons';
+import { uploadToCloudinary } from '../services/cloudinary';
+import { compressImage } from '../utils/imageUtils';
+import { SaveIcon, PackageIcon, CreditCardIcon, DollarSignIcon, ListIcon, CalendarIcon, CameraIcon, TrashIcon } from './icons';
 
 const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
 
@@ -13,12 +15,23 @@ const AddSale = () => {
   const { settings } = useAdminSettings();
 
   const [itemName, setItemName] = useState('');
-  // Changed quantity and price to strings to allow typing decimals (e.g., "10." or "0.5") without React resetting the input
   const [quantity, setQuantity] = useState<string>('1');
   const [price, setPrice] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,31 +46,41 @@ const AddSale = () => {
 
     setIsSubmitting(true);
     try {
-      // Create a date object from the input value, defaulting to current time for sorting accuracy if today
+      let cloudinaryData = { secure_url: undefined, public_id: undefined };
+      if (photoFile) {
+          addToast("Uploading image...", "info");
+          const compressed = await compressImage(photoFile);
+          // Convert dataURL back to blob/file for upload
+          const res = await fetch(compressed);
+          const blob = await res.blob();
+          const uploadRes = await uploadToCloudinary(blob);
+          cloudinaryData = { secure_url: uploadRes.secure_url as any, public_id: uploadRes.public_id as any };
+      }
+
       const now = new Date();
-      
       let finalDate = new Date(date).toISOString();
       if (date === now.toISOString().split('T')[0]) {
           finalDate = now.toISOString();
       }
 
-      // The useSales hook handles the total calculation and ID generation
       await addSale({
         itemName: itemName.trim(),
         quantity: numericQuantity,
         price: numericPrice,
         paymentMethod,
         date: finalDate,
-        // Optional fields can be left undefined or defaults
+        photo: cloudinaryData.secure_url,
+        cloudinaryId: cloudinaryData.public_id,
       });
       
       addToast('Sale recorded successfully!', 'success');
       
-      // Reset form
       setItemName('');
       setQuantity('1');
       setPrice('');
       setPaymentMethod('Cash');
+      setPhotoFile(null);
+      setPhotoPreview(null);
     } catch (error) {
       console.error(error);
       addToast('Failed to record sale.', 'error');
@@ -74,7 +97,6 @@ const AddSale = () => {
       
       <div className="bg-surface dark:bg-dark-surface p-6 rounded-2xl shadow-soft border border-border-color dark:border-dark-border-color">
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Item Name */}
             <div>
                 <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Item Name</label>
                 <div className="relative">
@@ -91,7 +113,6 @@ const AddSale = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                {/* Quantity */}
                 <div>
                     <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Quantity</label>
                     <div className="relative">
@@ -109,7 +130,6 @@ const AddSale = () => {
                     </div>
                 </div>
 
-                {/* Price */}
                 <div>
                     <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Unit Price</label>
                     <div className="relative">
@@ -128,7 +148,6 @@ const AddSale = () => {
                 </div>
             </div>
 
-            {/* Date Selection */}
             <div>
                 <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Date</label>
                 <div className="relative">
@@ -143,7 +162,25 @@ const AddSale = () => {
                 </div>
             </div>
 
-            {/* Payment Method */}
+            <div>
+                <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Product Photo (Optional)</label>
+                <div className="flex items-center gap-4">
+                    {photoPreview ? (
+                        <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-border-color">
+                            <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" />
+                            <button type="button" onClick={() => {setPhotoFile(null); setPhotoPreview(null);}} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><TrashIcon className="h-3 w-3"/></button>
+                        </div>
+                    ) : (
+                        <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border-color flex flex-col items-center justify-center text-subtle-text cursor-pointer hover:border-primary transition-colors">
+                            <CameraIcon className="h-6 w-6" />
+                            <span className="text-[10px] mt-1">Capture</span>
+                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
+                        </label>
+                    )}
+                    <p className="text-xs text-subtle-text">Add a photo of the item or receipt to store in the cloud.</p>
+                </div>
+            </div>
+
             <div>
                 <label className="block text-sm font-medium mb-2 text-subtle-text dark:text-dark-subtle-text">Payment Method</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -164,17 +201,15 @@ const AddSale = () => {
                 </div>
             </div>
 
-            {/* Total Display */}
             <div className="bg-background/50 dark:bg-dark-background/50 p-4 rounded-xl flex justify-between items-center border border-border-color dark:border-dark-border-color">
                 <span className="text-subtle-text dark:text-dark-subtle-text font-medium">Total Amount</span>
                 <span className="text-2xl font-bold text-primary">{settings.currency} {currentTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
 
-            {/* Submit Button */}
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary text-on-primary font-bold py-4 rounded-xl shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-on-primary font-bold py-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
                 {isSubmitting ? (
                     <div className="h-6 w-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />

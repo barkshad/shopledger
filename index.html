@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -5,7 +6,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ShopLedger – Simple Sales Recorder</title>
-    <meta name="description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance. All data is stored locally in your browser." />
+    <meta name="description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance. Securely syncs your sales, products, and receipts using Firestore and Cloudinary." />
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#000000" />
@@ -73,43 +74,38 @@
       }
     </script>
     <script type="importmap">
-    {
-      "imports": {
-        "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
-        "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "idb": "https://aistudiocdn.com/idb@^8.0.3",
-        "framer-motion": "https://aistudiocdn.com/framer-motion@^11.2.12",
-        "nanoid": "https://aistudiocdn.com/nanoid@^5.1.6",
-        "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
-        "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "idb": "https://aistudiocdn.com/idb@^8.0.3",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.2.12",
+    "nanoid": "https://aistudiocdn.com/nanoid@^5.1.6",
+    "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
+    "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/"
+  }
+}
+</script>
 </head>
   <body class="bg-background text-on-surface dark:bg-dark-background dark:text-dark-on-surface transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
-      /**
-       * Robust Service Worker Registration
-       * Standard relative registration can fail in sandboxed previews.
-       * We use a direct relative path and handle common errors.
-       */
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Register using a path relative to the current page.
-          // This is the most reliable way in browsers.
           navigator.serviceWorker.register('./sw.js', { scope: './' })
             .then(reg => {
               console.log('Service Worker registered successfully with scope:', reg.scope);
             })
             .catch(err => {
-              // If registration fails, it's often due to origin mismatch in the previewer.
-              // We log it but the app will continue to function normally.
               console.warn('Service Worker registration skipped or failed:', err.message);
             });
         });
