@@ -17,3 +17,16 @@ root.render(
     </HashRouter>
   </React.StrictMode>
 );
+
+// Register Service Worker for PWA / Offline functionality
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((registration) => {
+        console.log('ShopLedger SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('ShopLedger SW registration failed: ', registrationError);
+      });
+  });
+}
