@@ -5,7 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import { compressImage } from '../utils/imageUtils';
 import { uploadToCloudinary } from '../services/cloudinary';
-import { CreditCardIcon, TrashIcon } from './icons';
+import { CreditCardIcon, TrashIcon, SaveIcon } from './icons';
 
 const EXPENSE_CATEGORIES = ["Stock Purchase", "Transport", "Utilities", "Rent", "Salaries", "Miscellaneous"];
 
@@ -40,124 +40,133 @@ const AddExpense = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || amount <= 0 || !category) {
-      addToast('Please fill in all required fields with valid values.', 'error');
+    if (!name.trim() || amount <= 0 || !category) {
+      addToast('Please provide a valid name and amount.', 'error');
       return;
     }
     
     setIsSubmitting(true);
     try {
-        let cloudinaryData = { secure_url: undefined, public_id: undefined };
+        let cloudinaryUrl: string | undefined;
+        let cloudinaryId: string | undefined;
+
         if (photoFile && settings.isPhotoSavingEnabled) {
-            addToast("Uploading receipt to cloud...", "info");
+            addToast("Uploading receipt...", "info");
             const compressed = await compressImage(photoFile);
             const res = await fetch(compressed);
             const blob = await res.blob();
             const uploadRes = await uploadToCloudinary(blob);
-            cloudinaryData = { secure_url: uploadRes.secure_url as any, public_id: uploadRes.public_id as any };
+            cloudinaryUrl = uploadRes.secure_url;
+            cloudinaryId = uploadRes.public_id;
         }
 
-        const expenseData = {
-            name,
+        // Clean payload - Firestore does not allow 'undefined' fields
+        const expensePayload: any = {
+            name: name.trim(),
             category,
             amount,
             date: new Date(date).toISOString(),
-            note,
-            receiptPhoto: cloudinaryData.secure_url,
-            cloudinaryId: cloudinaryData.public_id,
         };
-        await addExpense(expenseData);
 
-        addToast('Expense recorded successfully!', 'success');
+        if (note.trim()) expensePayload.note = note.trim();
+        if (cloudinaryUrl) expensePayload.receiptPhoto = cloudinaryUrl;
+        if (cloudinaryId) expensePayload.cloudinaryId = cloudinaryId;
+
+        await addExpense(expensePayload);
+
+        addToast('Expense recorded successfully.', 'success');
+        
+        // Reset state
         setName('');
         setCategory(EXPENSE_CATEGORIES[0]);
         setAmount(0);
         setNote('');
         removePhoto();
-    } catch (error) {
-        console.error("Failed to add expense:", error);
-        addToast("There was an error saving the expense.", "error");
+    } catch (error: any) {
+        console.error("Expense Saving Error:", error);
+        addToast(error.message || "Failed to save expense.", "error");
     } finally {
         setIsSubmitting(false);
     }
   };
   
-  const inputStyles = "mt-1 block w-full px-3 py-2 bg-surface border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm";
+  const inputStyles = "mt-1 block w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none placeholder:text-zinc-400";
   const formatCurrency = (value: number) => `${settings.currency} ${value.toLocaleString()}`;
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Record a New Expense</h1>
-      <div className="bg-surface p-8 rounded-xl shadow-subtle border border-border-color">
+    <div className="max-w-xl mx-auto space-y-6 pb-20">
+      <h1 className="text-3xl font-bold">Record Expense</h1>
+      <div className="bg-surface dark:bg-dark-surface p-6 rounded-2xl shadow-soft border border-border-color dark:border-dark-border-color">
         <form onSubmit={handleSubmit} className="space-y-6">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="expenseName" className="block text-sm font-medium text-on-surface">Expense Name</label>
-              <input type="text" id="expenseName" value={name} onChange={(e) => setName(e.target.value)} className={inputStyles} required />
+              <label htmlFor="expenseName" className="block text-xs font-bold uppercase tracking-widest text-zinc-500 ml-1">Expense Name</label>
+              <input type="text" id="expenseName" value={name} onChange={(e) => setName(e.target.value)} className={inputStyles} placeholder="e.g. Electricity Bill, Shop Rent" required />
             </div>
+            
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-on-surface">Category</label>
+              <label htmlFor="category" className="block text-xs font-bold uppercase tracking-widest text-zinc-500 ml-1">Category</label>
               <select id="category" value={category} onChange={e => setCategory(e.target.value)} className={inputStyles}>
                 {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label htmlFor="amount" className="block text-sm font-medium text-on-surface">Amount</label>
-                <input type="number" id="amount" value={amount} onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))} className={inputStyles} min="0.01" step="0.01" required />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                  <label htmlFor="amount" className="block text-xs font-bold uppercase tracking-widest text-zinc-500 ml-1">Amount</label>
+                  <input type="number" id="amount" value={amount || ''} onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))} className={inputStyles} placeholder="0.00" min="0.01" step="0.01" required />
+              </div>
+              <div>
+                <label htmlFor="date" className="block text-xs font-bold uppercase tracking-widest text-zinc-500 ml-1">Date</label>
+                <input type="date" id="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputStyles} required />
+              </div>
             </div>
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-on-surface">Date of Expense</label>
-              <input type="date" id="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputStyles} required />
-            </div>
-          </div>
 
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-on-surface">Notes (Optional)</label>
-            <textarea id="notes" value={note} onChange={e => setNote(e.target.value)} rows={3} className={inputStyles}></textarea>
+            <div>
+              <label htmlFor="notes" className="block text-xs font-bold uppercase tracking-widest text-zinc-500 ml-1">Notes (Optional)</label>
+              <textarea id="notes" value={note} onChange={e => setNote(e.target.value)} rows={2} className={inputStyles} placeholder="Additional details..."></textarea>
+            </div>
           </div>
           
           {settings.isPhotoSavingEnabled && (
             <div>
-              <label className="block text-sm font-medium text-on-surface">Receipt Photo (Cloud Upload)</label>
-              <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border-color px-6 py-10">
-                  <div className="text-center">
-                      {photoPreview ? (
-                          <div className="relative">
-                            <img src={photoPreview} alt="Receipt Preview" className="mx-auto h-32 w-32 object-cover rounded-md" />
-                            <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"><TrashIcon className="h-4 w-4"/></button>
-                          </div>
-                      ) : (
-                          <CreditCardIcon className="mx-auto h-12 w-12 text-gray-300" />
-                      )}
-                      <div className="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
-                          <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-zinc-800">
-                              <span>{photoPreview ? 'Change receipt' : 'Take or upload receipt'}</span>
-                              <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange}/>
-                          </label>
+              <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 ml-1 mb-2">Receipt Document</label>
+              <div className="flex items-center gap-4">
+                  {photoPreview ? (
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-border-color">
+                        <img src={photoPreview} alt="Receipt Preview" className="w-full h-full object-cover" />
+                        <button type="button" onClick={removePhoto} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><TrashIcon className="h-3 w-3"/></button>
                       </div>
-                      <p className="text-xs leading-5 text-gray-600">Synced to Cloudinary</p>
-                  </div>
+                  ) : (
+                      <label className="w-24 h-24 rounded-xl border-2 border-dashed border-border-color flex flex-col items-center justify-center text-zinc-400 cursor-pointer hover:border-black transition-colors">
+                          <CreditCardIcon className="h-8 w-8" />
+                          <span className="text-[10px] font-bold mt-1 uppercase">Scan</span>
+                          <input type="file" className="sr-only" accept="image/*" capture="environment" onChange={handlePhotoChange}/>
+                      </label>
+                  )}
+                  <p className="text-xs text-zinc-500 leading-relaxed">Securely upload a photo of the receipt to the cloud for financial records.</p>
               </div>
             </div>
           )}
 
-          <div className="text-right border-t border-border-color pt-6">
-            <p className="text-lg font-semibold text-on-surface">
-                Total Expense: <span className="text-red-500 font-bold">{formatCurrency(amount)}</span>
-            </p>
+          <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl flex justify-between items-center border border-border-color dark:border-dark-border-color">
+            <span className="text-zinc-500 font-bold text-xs uppercase tracking-widest">Total Outflow</span>
+            <span className="text-2xl font-bold text-red-500">{formatCurrency(amount)}</span>
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-primary text-on-primary font-bold py-3 px-4 rounded-lg shadow-md hover:bg-zinc-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-black text-white dark:bg-white dark:text-black py-4 rounded-xl font-bold text-sm shadow-premium active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {isSubmitting && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>}
-            {isSubmitting ? 'Uploading to Cloud...' : 'Save Expense'}
+            {isSubmitting ? (
+              <div className="h-5 w-5 border-2 border-zinc-400 border-t-white dark:border-zinc-900 rounded-full animate-spin" />
+            ) : (
+              <>
+                <SaveIcon className="h-5 w-5" /> Save Expense Record
+              </>
+            )}
           </button>
         </form>
       </div>

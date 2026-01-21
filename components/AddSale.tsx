@@ -5,7 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import { uploadToCloudinary } from '../services/cloudinary';
 import { compressImage } from '../utils/imageUtils';
-import { SaveIcon, PackageIcon, CreditCardIcon, DollarSignIcon, ListIcon, CalendarIcon, CameraIcon, TrashIcon } from './icons';
+import { SaveIcon, PackageIcon, DollarSignIcon, ListIcon, CalendarIcon, CameraIcon, TrashIcon } from './icons';
 
 const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Paybill', 'Bank Transfer', 'Other'];
 
@@ -46,15 +46,17 @@ const AddSale = () => {
 
     setIsSubmitting(true);
     try {
-      let cloudinaryData = { secure_url: undefined, public_id: undefined };
+      let cloudinaryUrl: string | undefined;
+      let cloudinaryId: string | undefined;
+
       if (photoFile) {
           addToast("Uploading image...", "info");
           const compressed = await compressImage(photoFile);
-          // Convert dataURL back to blob/file for upload
           const res = await fetch(compressed);
           const blob = await res.blob();
           const uploadRes = await uploadToCloudinary(blob);
-          cloudinaryData = { secure_url: uploadRes.secure_url as any, public_id: uploadRes.public_id as any };
+          cloudinaryUrl = uploadRes.secure_url;
+          cloudinaryId = uploadRes.public_id;
       }
 
       const now = new Date();
@@ -63,27 +65,32 @@ const AddSale = () => {
           finalDate = now.toISOString();
       }
 
-      await addSale({
+      // Build clean object - Firestore fails if fields are 'undefined'
+      const salePayload: any = {
         itemName: itemName.trim(),
         quantity: numericQuantity,
         price: numericPrice,
         paymentMethod,
         date: finalDate,
-        photo: cloudinaryData.secure_url,
-        cloudinaryId: cloudinaryData.public_id,
-      });
+      };
+
+      if (cloudinaryUrl) salePayload.photo = cloudinaryUrl;
+      if (cloudinaryId) salePayload.cloudinaryId = cloudinaryId;
+
+      await addSale(salePayload);
       
       addToast('Sale recorded successfully!', 'success');
       
+      // Reset form
       setItemName('');
       setQuantity('1');
       setPrice('');
       setPaymentMethod('Cash');
       setPhotoFile(null);
       setPhotoPreview(null);
-    } catch (error) {
-      console.error(error);
-      addToast('Failed to record sale.', 'error');
+    } catch (error: any) {
+      console.error("Sale Recording Error:", error);
+      addToast(error.message || 'Failed to record sale.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +112,7 @@ const AddSale = () => {
                         type="text" 
                         value={itemName} 
                         onChange={(e) => setItemName(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface placeholder-subtle-text"
+                        className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-black focus:outline-none text-on-surface dark:text-dark-on-surface placeholder-subtle-text"
                         placeholder="e.g. Milk, Bread, Service"
                         required
                     />
@@ -121,7 +128,7 @@ const AddSale = () => {
                             type="number" 
                             value={quantity} 
                             onChange={(e) => setQuantity(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface"
+                            className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-black focus:outline-none text-on-surface dark:text-dark-on-surface"
                             placeholder="1"
                             min="0.1"
                             step="any"
@@ -138,7 +145,7 @@ const AddSale = () => {
                             type="number" 
                             value={price} 
                             onChange={(e) => setPrice(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface"
+                            className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-black focus:outline-none text-on-surface dark:text-dark-on-surface"
                             placeholder="0.00"
                             min="0"
                             step="0.01"
@@ -156,7 +163,7 @@ const AddSale = () => {
                         type="date" 
                         value={date} 
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-on-surface dark:text-dark-on-surface"
+                        className="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-border-color dark:border-dark-border-color rounded-xl focus:ring-2 focus:ring-black focus:outline-none text-on-surface dark:text-dark-on-surface"
                         required
                     />
                 </div>
@@ -171,7 +178,7 @@ const AddSale = () => {
                             <button type="button" onClick={() => {setPhotoFile(null); setPhotoPreview(null);}} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><TrashIcon className="h-3 w-3"/></button>
                         </div>
                     ) : (
-                        <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border-color flex flex-col items-center justify-center text-subtle-text cursor-pointer hover:border-primary transition-colors">
+                        <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border-color flex flex-col items-center justify-center text-subtle-text cursor-pointer hover:border-black transition-colors">
                             <CameraIcon className="h-6 w-6" />
                             <span className="text-[10px] mt-1">Capture</span>
                             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
@@ -191,8 +198,8 @@ const AddSale = () => {
                             onClick={() => setPaymentMethod(method)}
                             className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
                                 paymentMethod === method 
-                                    ? 'bg-primary text-on-primary border-primary shadow-md' 
-                                    : 'bg-background dark:bg-dark-background border-border-color dark:border-dark-border-color text-subtle-text dark:text-dark-subtle-text hover:border-primary'
+                                    ? 'bg-black text-white border-black shadow-md' 
+                                    : 'bg-background dark:bg-dark-background border-border-color dark:border-dark-border-color text-subtle-text dark:text-dark-subtle-text hover:border-black'
                             }`}
                         >
                             {method}
@@ -201,21 +208,21 @@ const AddSale = () => {
                 </div>
             </div>
 
-            <div className="bg-background/50 dark:bg-dark-background/50 p-4 rounded-xl flex justify-between items-center border border-border-color dark:border-dark-border-color">
-                <span className="text-subtle-text dark:text-dark-subtle-text font-medium">Total Amount</span>
-                <span className="text-2xl font-bold text-primary">{settings.currency} {currentTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl flex justify-between items-center border border-border-color dark:border-dark-border-color">
+                <span className="text-subtle-text dark:text-dark-subtle-text font-medium text-xs uppercase tracking-wider">Total Amount</span>
+                <span className="text-2xl font-bold text-on-surface dark:text-white">{settings.currency} {currentTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
 
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary text-on-primary font-bold py-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isSubmitting ? (
-                    <div className="h-6 w-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="h-6 w-6 border-2 border-zinc-400 border-t-white dark:border-zinc-900 rounded-full animate-spin" />
                 ) : (
                     <>
-                        <SaveIcon className="h-6 w-6" /> Record Sale
+                        <SaveIcon className="h-6 w-6" /> Save Transaction
                     </>
                 )}
             </button>
