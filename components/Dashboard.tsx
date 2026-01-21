@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, YAxis, Tooltip } from 'recharts';
@@ -5,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSales } from '../hooks/useSales';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAdminSettings } from '../hooks/useAdminSettings';
+import { useAuth } from '../hooks/useAuth';
 import { usePWA } from '../hooks/usePWA';
 import StatCard from './StatCard';
 import { getStartOfWeek, getStartOfMonth } from '../utils/dateUtils';
@@ -20,7 +22,6 @@ import {
     PackageIcon,
     CreditCardIcon,
     FileTextIcon,
-    CameraIcon,
     PlusCircleIcon,
     GaugeIcon,
     StatsIcon,
@@ -88,6 +89,7 @@ const HealthScoreGuage: React.FC<{ score: number }> = ({ score }) => {
 
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const { sales, loading: salesLoading } = useSales();
   const { expenses, loading: expensesLoading } = useExpenses();
   const { settings } = useAdminSettings();
@@ -98,11 +100,12 @@ const Dashboard = () => {
 
   useEffect(() => {
       const checkStock = async () => {
-          const allProducts = await db.getAllProducts();
+          if (!user) return;
+          const allProducts = await db.getAllProducts(user.uid);
           setLowStockProducts(allProducts.filter(p => p.stock <= p.minStock));
       };
       checkStock();
-  }, [sales]);
+  }, [sales, user]);
 
   const {
     todaySales,

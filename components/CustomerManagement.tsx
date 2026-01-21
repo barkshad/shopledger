@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as db from '../services/db';
 import { Customer } from '../types';
 import { useToast } from '../hooks/useToast';
+import { useAuth } from '../hooks/useAuth';
 import { EditIcon, TrashIcon, PlusCircleIcon, SearchIcon, UsersIcon } from './icons';
 import ConfirmationDialog from './ConfirmationDialog';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 
 const CustomerManagement = () => {
+    const { user } = useAuth();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -17,22 +19,24 @@ const CustomerManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    const refreshCustomers = async () => {
-        setCustomers(await db.getAllCustomers());
-    };
+    const refreshCustomers = useCallback(async () => {
+        if (!user) return;
+        setCustomers(await db.getAllCustomers(user.uid));
+    }, [user]);
 
     useEffect(() => {
         refreshCustomers();
-    }, []);
+    }, [refreshCustomers]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user) return;
         try {
             if (editingCustomer && editingCustomer.id) {
-                await db.updateCustomer({ ...formData, id: editingCustomer.id });
+                await db.updateCustomer(user.uid, { ...formData, id: editingCustomer.id });
                 addToast('Customer updated', 'success');
             } else {
-                await db.addCustomer(formData);
+                await db.addCustomer(user.uid, formData);
                 addToast('Customer added', 'success');
             }
             setIsModalOpen(false);
@@ -51,8 +55,8 @@ const CustomerManagement = () => {
     };
 
     const handleDelete = async () => {
-        if (deleteId) {
-            await db.deleteCustomer(deleteId);
+        if (deleteId && user) {
+            await db.deleteCustomer(user.uid, deleteId);
             addToast('Customer deleted', 'success');
             setDeleteId(null);
             refreshCustomers();

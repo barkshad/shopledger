@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as db from '../services/db';
 import { Product } from '../types';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
+import { useAuth } from '../hooks/useAuth';
 import { EditIcon, TrashIcon, PlusCircleIcon, SearchIcon } from './icons';
 import ConfirmationDialog from './ConfirmationDialog';
 
 const ProductManagement = () => {
+    const { user } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -17,22 +19,24 @@ const ProductManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    const refreshProducts = async () => {
-        setProducts(await db.getAllProducts());
-    };
+    const refreshProducts = useCallback(async () => {
+        if (!user) return;
+        setProducts(await db.getAllProducts(user.uid));
+    }, [user]);
 
     useEffect(() => {
         refreshProducts();
-    }, []);
+    }, [refreshProducts]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user) return;
         try {
             if (editingProduct && editingProduct.id) {
-                await db.updateProduct({ ...formData, id: editingProduct.id });
+                await db.updateProduct(user.uid, { ...formData, id: editingProduct.id });
                 addToast('Product updated', 'success');
             } else {
-                await db.addProduct(formData);
+                await db.addProduct(user.uid, formData);
                 addToast('Product added', 'success');
             }
             setIsModalOpen(false);
@@ -51,8 +55,8 @@ const ProductManagement = () => {
     };
 
     const handleDelete = async () => {
-        if (deleteId) {
-            await db.deleteProduct(deleteId);
+        if (deleteId && user) {
+            await db.deleteProduct(user.uid, deleteId);
             addToast('Product deleted', 'success');
             setDeleteId(null);
             refreshProducts();

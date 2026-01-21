@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdminSettings } from '../types';
 import * as db from '../services/db';
+import { useAuth } from './useAuth';
 
 const defaultSettings: AdminSettings = {
   theme: 'light',
@@ -10,19 +11,22 @@ const defaultSettings: AdminSettings = {
 };
 
 export const useAdminSettings = () => {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<AdminSettings>(defaultSettings);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Load settings from Firestore on mount
   useEffect(() => {
     const loadSettings = async () => {
+      if (!user) return;
       try {
-        const remoteSettings = await db.getSettings();
+        setLoading(true);
+        const remoteSettings = await db.getSettings(user.uid);
         if (remoteSettings) {
           setSettings(remoteSettings);
         } else {
           // Initialize remote settings if none exist
-          await db.updateSettings(defaultSettings);
+          await db.updateSettings(user.uid, defaultSettings);
         }
       } catch (error) {
         console.error('Failed to load settings from Firestore', error);
@@ -31,8 +35,10 @@ export const useAdminSettings = () => {
       }
     };
 
-    loadSettings();
-  }, []);
+    if (user) {
+      loadSettings();
+    }
+  }, [user]);
 
   // Sync theme to document
   useEffect(() => {
@@ -44,12 +50,13 @@ export const useAdminSettings = () => {
   }, [settings.theme]);
 
   const updateSettings = useCallback(async (newSettings: Partial<AdminSettings>) => {
+    if (!user) return;
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
-      db.updateSettings(updated).catch(e => console.error("Firestore settings update failed", e));
+      db.updateSettings(user.uid, updated).catch(e => console.error("Firestore settings update failed", e));
       return updated;
     });
-  }, []);
+  }, [user]);
 
   return { settings, updateSettings, loading };
 };

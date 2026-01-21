@@ -44,17 +44,18 @@ const COLLECTIONS = {
   SETTINGS: 'settings'
 };
 
-const GLOBAL_SETTINGS_ID = 'app_config';
-
 const mapDoc = <T,>(doc: QueryDocumentSnapshot<DocumentData>): T => ({
   ...(doc.data() as T),
   id: doc.id,
 });
 
+// Helper to get user-specific subcollection
+const getUserCol = (userId: string, colName: string) => collection(db, 'users', userId, colName);
+
 // Settings Operations
-export const getSettings = async (): Promise<AdminSettings | null> => {
+export const getSettings = async (userId: string): Promise<AdminSettings | null> => {
   try {
-    const docRef = doc(db, COLLECTIONS.SETTINGS, GLOBAL_SETTINGS_ID);
+    const docRef = doc(db, 'users', userId, COLLECTIONS.SETTINGS, 'app_config');
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? (docSnap.data() as AdminSettings) : null;
   } catch (e) {
@@ -63,9 +64,9 @@ export const getSettings = async (): Promise<AdminSettings | null> => {
   }
 };
 
-export const updateSettings = async (settings: AdminSettings): Promise<void> => {
+export const updateSettings = async (userId: string, settings: AdminSettings): Promise<void> => {
   try {
-    const docRef = doc(db, COLLECTIONS.SETTINGS, GLOBAL_SETTINGS_ID);
+    const docRef = doc(db, 'users', userId, COLLECTIONS.SETTINGS, 'app_config');
     return setDoc(docRef, settings, { merge: true });
   } catch (e) {
     console.error("Firestore updateSettings failed:", e);
@@ -74,9 +75,9 @@ export const updateSettings = async (settings: AdminSettings): Promise<void> => 
 };
 
 // Sales Operations
-export const addSale = async (sale: Omit<Sale, 'id'>): Promise<string> => {
+export const addSale = async (userId: string, sale: Omit<Sale, 'id'>): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.SALES), sale);
+    const docRef = await addDoc(getUserCol(userId, COLLECTIONS.SALES), sale);
     return docRef.id;
   } catch (e) {
     console.error("Firestore addSale failed:", e);
@@ -84,9 +85,9 @@ export const addSale = async (sale: Omit<Sale, 'id'>): Promise<string> => {
   }
 };
 
-export const getAllSales = async (): Promise<Sale[]> => {
+export const getAllSales = async (userId: string): Promise<Sale[]> => {
   try {
-    const q = query(collection(db, COLLECTIONS.SALES), orderBy('date', 'desc'));
+    const q = query(getUserCol(userId, COLLECTIONS.SALES), orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => mapDoc<Sale>(doc));
   } catch (e) {
@@ -95,29 +96,29 @@ export const getAllSales = async (): Promise<Sale[]> => {
   }
 };
 
-export const updateSale = async (sale: Sale): Promise<void> => {
+export const updateSale = async (userId: string, sale: Sale): Promise<void> => {
   try {
     if (!sale.id) return;
     const { id, ...data } = sale;
-    return updateDoc(doc(db, COLLECTIONS.SALES, id), data as any);
+    return updateDoc(doc(db, 'users', userId, COLLECTIONS.SALES, id), data as any);
   } catch (e) {
     console.error("Firestore updateSale failed:", e);
     throw e;
   }
 };
 
-export const deleteSale = async (id: string): Promise<void> => {
+export const deleteSale = async (userId: string, id: string): Promise<void> => {
   try {
-    return deleteDoc(doc(db, COLLECTIONS.SALES, id));
+    return deleteDoc(doc(db, 'users', userId, COLLECTIONS.SALES, id));
   } catch (e) {
     console.error("Firestore deleteSale failed:", e);
     throw e;
   }
 };
 
-export const clearSales = async (): Promise<void> => {
+export const clearSales = async (userId: string): Promise<void> => {
   try {
-    const q = await getDocs(collection(db, COLLECTIONS.SALES));
+    const q = await getDocs(getUserCol(userId, COLLECTIONS.SALES));
     const batch = writeBatch(db);
     q.forEach(d => batch.delete(d.ref));
     return batch.commit();
@@ -128,9 +129,9 @@ export const clearSales = async (): Promise<void> => {
 };
 
 // Expense Operations
-export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<string> => {
+export const addExpense = async (userId: string, expense: Omit<Expense, 'id'>): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
+    const docRef = await addDoc(getUserCol(userId, COLLECTIONS.EXPENSES), expense);
     return docRef.id;
   } catch (e) {
     console.error("Firestore addExpense failed:", e);
@@ -138,9 +139,9 @@ export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<string> 
   }
 };
 
-export const getAllExpenses = async (): Promise<Expense[]> => {
+export const getAllExpenses = async (userId: string): Promise<Expense[]> => {
   try {
-    const q = query(collection(db, COLLECTIONS.EXPENSES), orderBy('date', 'desc'));
+    const q = query(getUserCol(userId, COLLECTIONS.EXPENSES), orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => mapDoc<Expense>(doc));
   } catch (e) {
@@ -149,29 +150,29 @@ export const getAllExpenses = async (): Promise<Expense[]> => {
   }
 };
 
-export const updateExpense = async (expense: Expense): Promise<void> => {
+export const updateExpense = async (userId: string, expense: Expense): Promise<void> => {
   try {
     if (!expense.id) return;
     const { id, ...data } = expense;
-    return updateDoc(doc(db, COLLECTIONS.EXPENSES, id), data as any);
+    return updateDoc(doc(db, 'users', userId, COLLECTIONS.EXPENSES, id), data as any);
   } catch (e) {
     console.error("Firestore updateExpense failed:", e);
     throw e;
   }
 };
 
-export const deleteExpense = async (id: string): Promise<void> => {
+export const deleteExpense = async (userId: string, id: string): Promise<void> => {
   try {
-    return deleteDoc(doc(db, COLLECTIONS.EXPENSES, id));
+    return deleteDoc(doc(db, 'users', userId, COLLECTIONS.EXPENSES, id));
   } catch (e) {
     console.error("Firestore deleteExpense failed:", e);
     throw e;
   }
 };
 
-export const clearExpenses = async (): Promise<void> => {
+export const clearExpenses = async (userId: string): Promise<void> => {
   try {
-    const q = await getDocs(collection(db, COLLECTIONS.EXPENSES));
+    const q = await getDocs(getUserCol(userId, COLLECTIONS.EXPENSES));
     const batch = writeBatch(db);
     q.forEach(d => batch.delete(d.ref));
     return batch.commit();
@@ -182,9 +183,9 @@ export const clearExpenses = async (): Promise<void> => {
 };
 
 // Product Operations
-export const getAllProducts = async (): Promise<Product[]> => {
+export const getAllProducts = async (userId: string): Promise<Product[]> => {
   try {
-    const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
+    const querySnapshot = await getDocs(getUserCol(userId, COLLECTIONS.PRODUCTS));
     return querySnapshot.docs.map(doc => mapDoc<Product>(doc));
   } catch (e) {
     console.error("Firestore getAllProducts failed:", e);
@@ -192,9 +193,9 @@ export const getAllProducts = async (): Promise<Product[]> => {
   }
 };
 
-export const addProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
+export const addProduct = async (userId: string, product: Omit<Product, 'id'>): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.PRODUCTS), product);
+    const docRef = await addDoc(getUserCol(userId, COLLECTIONS.PRODUCTS), product);
     return docRef.id;
   } catch (e) {
     console.error("Firestore addProduct failed:", e);
@@ -202,20 +203,20 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<string> 
   }
 };
 
-export const updateProduct = async (product: Product): Promise<void> => {
+export const updateProduct = async (userId: string, product: Product): Promise<void> => {
   try {
     if (!product.id) return;
     const { id, ...data } = product;
-    return updateDoc(doc(db, COLLECTIONS.PRODUCTS, id), data as any);
+    return updateDoc(doc(db, 'users', userId, COLLECTIONS.PRODUCTS, id), data as any);
   } catch (e) {
     console.error("Firestore updateProduct failed:", e);
     throw e;
   }
 };
 
-export const deleteProduct = async (id: string): Promise<void> => {
+export const deleteProduct = async (userId: string, id: string): Promise<void> => {
   try {
-    return deleteDoc(doc(db, COLLECTIONS.PRODUCTS, id));
+    return deleteDoc(doc(db, 'users', userId, COLLECTIONS.PRODUCTS, id));
   } catch (e) {
     console.error("Firestore deleteProduct failed:", e);
     throw e;
@@ -223,9 +224,9 @@ export const deleteProduct = async (id: string): Promise<void> => {
 };
 
 // Customer Operations
-export const getAllCustomers = async (): Promise<Customer[]> => {
+export const getAllCustomers = async (userId: string): Promise<Customer[]> => {
   try {
-    const querySnapshot = await getDocs(collection(db, COLLECTIONS.CUSTOMERS));
+    const querySnapshot = await getDocs(getUserCol(userId, COLLECTIONS.CUSTOMERS));
     return querySnapshot.docs.map(doc => mapDoc<Customer>(doc));
   } catch (e) {
     console.error("Firestore getAllCustomers failed:", e);
@@ -233,9 +234,9 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
   }
 };
 
-export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<string> => {
+export const addCustomer = async (userId: string, customer: Omit<Customer, 'id'>): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.CUSTOMERS), customer);
+    const docRef = await addDoc(getUserCol(userId, COLLECTIONS.CUSTOMERS), customer);
     return docRef.id;
   } catch (e) {
     console.error("Firestore addCustomer failed:", e);
@@ -243,20 +244,20 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<strin
   }
 };
 
-export const updateCustomer = async (customer: Customer): Promise<void> => {
+export const updateCustomer = async (userId: string, customer: Customer): Promise<void> => {
   try {
     if (!customer.id) return;
     const { id, ...data } = customer;
-    return updateDoc(doc(db, COLLECTIONS.CUSTOMERS, id), data as any);
+    return updateDoc(doc(db, 'users', userId, COLLECTIONS.CUSTOMERS, id), data as any);
   } catch (e) {
     console.error("Firestore updateCustomer failed:", e);
     throw e;
   }
 };
 
-export const deleteCustomer = async (id: string): Promise<void> => {
+export const deleteCustomer = async (userId: string, id: string): Promise<void> => {
   try {
-    return deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, id));
+    return deleteDoc(doc(db, 'users', userId, COLLECTIONS.CUSTOMERS, id));
   } catch (e) {
     console.error("Firestore deleteCustomer failed:", e);
     throw e;
