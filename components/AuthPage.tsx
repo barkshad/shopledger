@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ShoppingCartIcon, CheckCircleIcon, ArrowUpRightIcon, GoogleIcon } from './icons';
+import { ShoppingCartIcon, CheckCircleIcon, GoogleIcon } from './icons';
 
 const MotionDiv = motion.div as any;
 
@@ -19,7 +19,6 @@ const AuthPage = () => {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
-  // If user is already logged in, redirect to dashboard
   if (user && !authLoading) {
     return <Navigate to="/" replace />;
   }
@@ -27,7 +26,7 @@ const AuthPage = () => {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      addToast('Please enter both email and password.', 'error');
+      addToast('Valid email and password are required.', 'error');
       return;
     }
 
@@ -35,19 +34,19 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         await login(email, password);
-        addToast('Welcome back to ShopLedger!', 'success');
+        addToast('Session established.', 'success');
       } else {
         await register(email, password);
-        addToast('Account created successfully!', 'success');
+        addToast('Account provisioned successfully.', 'success');
       }
       navigate('/');
     } catch (error: any) {
       console.error(error);
       const msg = error.code === 'auth/user-not-found' 
-        ? 'No account found with this email.' 
+        ? 'Account not identified.' 
         : error.code === 'auth/wrong-password' 
-        ? 'Incorrect password.' 
-        : error.message;
+        ? 'Invalid credentials.' 
+        : 'System authentication error.';
       addToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
@@ -58,184 +57,169 @@ const AuthPage = () => {
     setIsGoogleSubmitting(true);
     try {
         await loginWithGoogle();
-        addToast('Signed in with Google successfully!', 'success');
+        addToast('Authenticated via Google.', 'success');
         navigate('/');
     } catch (error: any) {
-        console.error(error);
         if (error.code !== 'auth/popup-closed-by-user') {
-            addToast('Google Sign-in failed. Please try again.', 'error');
+            addToast('Third-party authentication failed.', 'error');
         }
     } finally {
         setIsGoogleSubmitting(false);
     }
   };
 
-  const features = [
-    "Smart Sales & Expense Tracking",
-    "Cloud Backup & Multi-device Sync",
-    "Gemini AI Business Insights",
-    "Professional PDF/CSV Reports"
+  const productAttributes = [
+    "Atomic sales recording with local-first sync",
+    "Cloud-based secure financial reconciliation",
+    "Automated inventory health assessment",
+    "Professional reporting for stakeholders"
   ];
 
   return (
-    <div className="min-h-screen w-full flex bg-background dark:bg-dark-background overflow-hidden">
-      {/* Left Column: Branding (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-zinc-900 relative items-center justify-center p-12 text-white">
-        {/* Background Texture */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(255,255,255,0.1),transparent_70%)]" />
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/20 blur-[120px]" />
-        </div>
-
-        <div className="relative z-10 max-w-lg space-y-8">
+    <div className="min-h-screen w-full flex bg-background dark:bg-dark-background overflow-hidden font-sans">
+      {/* Visual Context Panel (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-zinc-50 dark:bg-zinc-900 border-r border-border-color dark:border-dark-border-color items-center justify-center p-24">
+        <div className="max-w-md space-y-12">
             <MotionDiv
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
             >
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-white p-3 rounded-2xl">
-                        <ShoppingCartIcon className="h-8 w-8 text-zinc-900" />
+                <div className="flex items-center gap-4 mb-10">
+                    <div className="bg-black dark:bg-white p-2.5 rounded-xl">
+                        <ShoppingCartIcon className="h-6 w-6 text-white dark:text-black" strokeWidth={2.5} />
                     </div>
-                    <span className="text-3xl font-bold tracking-tight">ShopLedger</span>
+                    <span className="text-xl font-bold tracking-tight uppercase">ShopLedger</span>
                 </div>
-                <h1 className="text-5xl font-extrabold leading-tight mb-4">
-                    The Smart Way to Manage Your <span className="text-zinc-400">Retail Business.</span>
+                <h1 className="text-4xl font-semibold leading-tight mb-6 text-on-surface dark:text-white">
+                    Deliberate tools for retail operations.
                 </h1>
-                <p className="text-zinc-400 text-lg leading-relaxed">
-                    Designed for modern shop owners. Record sales, manage inventory, and grow your profit with AI-driven analytics.
+                <p className="text-subtle-text dark:text-dark-subtle-text text-lg leading-relaxed">
+                    A unified platform for tracking performance, managing stock, and securing your business data.
                 </p>
             </MotionDiv>
 
-            <div className="space-y-4">
-                {features.map((f, i) => (
+            <div className="space-y-6">
+                {productAttributes.map((attr, i) => (
                     <MotionDiv 
                         key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 + (i * 0.1) }}
-                        className="flex items-center gap-3 text-zinc-300 font-medium"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 + (i * 0.1) }}
+                        className="flex items-start gap-4 text-zinc-600 dark:text-zinc-400"
                     >
-                        <CheckCircleIcon className="h-5 w-5 text-primary bg-white rounded-full" />
-                        {f}
+                        <CheckCircleIcon className="h-5 w-5 text-black dark:text-white mt-0.5 flex-shrink-0" />
+                        <span className="text-sm font-medium">{attr}</span>
                     </MotionDiv>
                 ))}
             </div>
 
-            <MotionDiv
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
-                className="pt-12"
-            >
-                <div className="p-4 bg-zinc-800/50 rounded-2xl border border-zinc-700/50 backdrop-blur-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-xs">AI</div>
-                    <p className="text-sm text-zinc-400">"ShopLedger helped me increase my monthly profit by 24% using its trend analysis features."</p>
-                </div>
-            </MotionDiv>
+            <div className="pt-8 border-t border-border-color dark:border-dark-border-color">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Enterprise Ready</p>
+                <p className="text-xs text-zinc-500 mt-2">End-to-end encryption for all transaction data.</p>
+            </div>
         </div>
       </div>
 
-      {/* Right Column: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+      {/* Action Panel */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16">
         <MotionDiv 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md space-y-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full max-w-sm space-y-10"
         >
-          <div className="lg:hidden flex flex-col items-center mb-8">
-             <div className="bg-zinc-900 dark:bg-zinc-100 p-4 rounded-3xl mb-4 shadow-xl">
-                 <ShoppingCartIcon className="h-10 w-10 text-white dark:text-zinc-900" />
+          <div className="lg:hidden flex items-center gap-3 mb-12">
+             <div className="bg-black dark:bg-white p-2 rounded-lg">
+                 <ShoppingCartIcon className="h-5 w-5 text-white dark:text-black" />
              </div>
-             <h2 className="text-3xl font-bold tracking-tight">ShopLedger</h2>
+             <h2 className="text-lg font-bold tracking-tight uppercase">ShopLedger</h2>
           </div>
 
-          <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-extrabold text-on-surface dark:text-white">
-                {isLogin ? 'Sign In' : 'Create Account'}
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-on-surface dark:text-white tracking-tight">
+                {isLogin ? 'Sign in to your account' : 'Provision a new account'}
             </h2>
-            <p className="text-subtle-text dark:text-zinc-400 mt-2">
-                {isLogin ? 'Enter your credentials to access your dashboard' : 'Start managing your shop smarter today'}
+            <p className="text-sm text-subtle-text dark:text-dark-subtle-text">
+                {isLogin ? 'Provide your credentials to access the ledger.' : 'Enter details to initialize your business environment.'}
             </p>
           </div>
 
-          {/* Google Auth Button */}
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleSubmitting}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-on-surface dark:text-white font-bold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all shadow-sm disabled:opacity-70"
-          >
-            {isGoogleSubmitting ? (
-                <div className="h-5 w-5 border-2 border-zinc-400 border-t-zinc-900 rounded-full animate-spin" />
-            ) : (
-                <>
-                    <GoogleIcon className="h-5 w-5" />
-                    <span>{isLogin ? 'Sign in with Google' : 'Sign up with Google'}</span>
-                </>
-            )}
-          </button>
-
-          <div className="relative">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200 dark:border-zinc-800"></div></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="px-4 bg-background dark:bg-dark-background text-subtle-text font-bold">Or continue with email</span></div>
-          </div>
-
-          <form onSubmit={handleEmailSubmit} className="space-y-5">
-            <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-subtle-text ml-1">Email Address</label>
-              <input 
-                type="email" 
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3.5 bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl focus:ring-2 focus:ring-primary dark:focus:ring-white transition-all text-on-surface dark:text-white placeholder:text-zinc-400"
-                placeholder="you@business.com"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center justify-between px-1">
-                <label className="text-xs font-bold uppercase tracking-wider text-subtle-text">Password</label>
-                {isLogin && <button type="button" className="text-xs font-bold text-primary dark:text-white hover:underline">Forgot password?</button>}
-              </div>
-              <input 
-                type="password" 
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl focus:ring-2 focus:ring-primary dark:focus:ring-white transition-all text-on-surface dark:text-white placeholder:text-zinc-400"
-                placeholder="••••••••"
-              />
-            </div>
-
+          <div className="space-y-6">
             <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-4 rounded-2xl font-bold text-lg shadow-xl hover:shadow-zinc-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-70"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleSubmitting}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all shadow-soft disabled:opacity-50"
             >
-                {isSubmitting ? (
-                    <div className="h-6 w-6 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                {isGoogleSubmitting ? (
+                    <div className="h-4 w-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
                 ) : (
                     <>
-                        {isLogin ? 'Sign In' : 'Join ShopLedger'}
-                        <ArrowUpRightIcon className="h-5 w-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        <GoogleIcon className="h-5 w-5" />
+                        <span>Continue with Google</span>
                     </>
                 )}
             </button>
-          </form>
 
-          <div className="text-center">
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border-color dark:border-dark-border-color"></div></div>
+                <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold"><span className="px-4 bg-background dark:bg-dark-background text-zinc-400">Or use email</span></div>
+            </div>
+
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">Email Address</label>
+                    <input 
+                        type="email" 
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none"
+                        placeholder="name@company.com"
+                    />
+                </div>
+
+                <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Password</label>
+                        {isLogin && <button type="button" className="text-[10px] font-bold text-zinc-500 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest">Reset password</button>}
+                    </div>
+                    <input 
+                        type="password" 
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-border-color dark:border-dark-border-color rounded-xl focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-all text-sm outline-none"
+                        placeholder="••••••••"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold text-sm shadow-premium active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    {isSubmitting ? (
+                        <div className="h-4 w-4 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin" />
+                    ) : (
+                        <span>{isLogin ? 'Sign in' : 'Create account'}</span>
+                    )}
+                </button>
+            </form>
+          </div>
+
+          <div className="text-center pt-4">
             <button 
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-on-surface dark:text-white font-semibold hover:underline"
+                className="text-xs font-bold text-zinc-500 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest"
             >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                {isLogin ? "No account? Provision one here" : "Return to account sign-in"}
             </button>
           </div>
           
-          <p className="text-[10px] text-center text-subtle-text px-8 leading-relaxed">
-            By signing in, you agree to our Terms of Service and Privacy Policy. Your data is encrypted and backed up securely.
-          </p>
+          <div className="text-[10px] text-center text-zinc-400 space-y-1 leading-relaxed">
+            <p>Protected by platform security standards.</p>
+            <p>© {new Date().getFullYear()} ShopLedger Retail Systems.</p>
+          </div>
         </MotionDiv>
       </div>
     </div>

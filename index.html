@@ -5,26 +5,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShopLedger – Simple Sales Recorder</title>
-    <meta name="description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance. Securely syncs your sales, products, and receipts using Firestore and Cloudinary." />
+    <title>ShopLedger – Business Management Platform</title>
+    <meta name="description" content="Secure retail ledger for transaction tracking and inventory oversight. Built for accuracy and performance." />
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#ffffff" />
     <link rel="manifest" href="./manifest.json" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="ShopLedger" />
-    <link rel="apple-touch-icon" href="https://picsum.photos/id/2/192/192" />
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="ShopLedger – Simple Sales Recorder" />
-    <meta property="og:description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance." />
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content="ShopLedger – Simple Sales Recorder" />
-    <meta property="twitter:description" content="A simple yet smart sales recording app for shop owners to track daily income and sales performance." />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -33,42 +22,34 @@
         theme: {
           extend: {
             colors: {
-              // Light Theme
+              // Strict Gray/Zinc System
               primary: '#000000',
-              background: '#F7F9FC',
-              surface: '#FFFFFF',
-              'on-surface': '#1A202C',
+              background: '#FFFFFF',
+              surface: '#FAFAFA',
+              'on-surface': '#09090B',
               'on-primary': '#FFFFFF',
-              'subtle-text': '#5A6474',
-              'border-color': '#E6EBF2',
-              danger: '#FF4757',
+              'subtle-text': '#71717A',
+              'border-color': '#E4E4E7',
+              danger: '#EF4444',
 
-              // Dark Theme Colors
-              'dark-background': '#0D1117',
-              'dark-surface': '#161B22',
-              'dark-on-surface': '#E4EAF2',
-              'dark-subtle-text': '#8B949E',
-              'dark-border-color': '#30363D',
-              'dark-danger': '#FF6B81',
+              // Dark Mode Consistency
+              'dark-background': '#09090B',
+              'dark-surface': '#18181B',
+              'dark-on-surface': '#FAFAFA',
+              'dark-subtle-text': '#A1A1AA',
+              'dark-border-color': '#27272A',
             },
             borderRadius: {
-              '2xl': '1rem',
-              '3xl': '1.5rem',
-              '4xl': '2rem',
+              'xl': '12px',
+              '2xl': '16px',
             },
             boxShadow: {
-              'soft': '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
-              'glow': '0 0 20px 0 rgba(0, 0, 0, 0.2)',
+              'soft': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+              'premium': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
             },
-            keyframes: {
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-            },
-            animation: {
-              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
-            },
+            spacing: {
+              '18': '4.5rem',
+            }
           },
         },
       }
@@ -95,21 +76,8 @@
 }
 </script>
 </head>
-  <body class="bg-background text-on-surface dark:bg-dark-background dark:text-dark-on-surface transition-colors duration-300">
+  <body class="bg-background text-on-surface dark:bg-dark-background dark:text-dark-on-surface antialiased transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js', { scope: './' })
-            .then(reg => {
-              console.log('Service Worker registered successfully with scope:', reg.scope);
-            })
-            .catch(err => {
-              console.warn('Service Worker registration skipped or failed:', err.message);
-            });
-        });
-      }
-    </script>
   </body>
 </html>

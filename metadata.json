@@ -1,8 +1,7 @@
 {
   "name": "ShopLedger",
-  "description": "A simple yet smart sales recording app for shop owners. Securely syncs your sales, products, and receipts using Firestore and Cloudinary.",
+  "description": "Professional retail management platform for small to medium enterprises. Real-time sales recording, inventory tracking, and financial reporting.",
   "requestFramePermissions": [
-    "camera",
-    "microphone"
+    "camera"
   ]
 }
