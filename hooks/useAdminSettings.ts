@@ -1,14 +1,9 @@
+
 import { useState, useEffect, useCallback } from 'react';
+import { AdminSettings } from '../types';
+import * as db from '../services/db';
 
-const ADMIN_SETTINGS_KEY = 'shopLedgerAdminSettings';
 const ADMIN_SECRET_KEY_DEFAULT = '12345';
-
-export interface AdminSettings {
-  secretKey: string;
-  theme: 'light' | 'dark';
-  currency: 'KSh' | 'USD' | 'EUR' | 'GBP';
-  isPhotoSavingEnabled: boolean;
-}
 
 const defaultSettings: AdminSettings = {
   secretKey: ADMIN_SECRET_KEY_DEFAULT,
@@ -17,39 +12,48 @@ const defaultSettings: AdminSettings = {
   isPhotoSavingEnabled: true,
 };
 
-const getStoredSettings = (): AdminSettings => {
-  try {
-    const stored = localStorage.getItem(ADMIN_SETTINGS_KEY);
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) };
-    }
-  } catch (error) {
-    console.error('Failed to parse admin settings from localStorage', error);
-  }
-  return defaultSettings;
-};
-
 export const useAdminSettings = () => {
-  const [settings, setSettings] = useState<AdminSettings>(getStoredSettings);
+  const [settings, setSettings] = useState<AdminSettings>(defaultSettings);
+  const [loading, setLoading] = useState<boolean>(true);
 
+  // Load settings from Firestore on mount
   useEffect(() => {
-    try {
-      localStorage.setItem(ADMIN_SETTINGS_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.error('Failed to save admin settings to localStorage', error);
-    }
+    const loadSettings = async () => {
+      try {
+        const remoteSettings = await db.getSettings();
+        if (remoteSettings) {
+          setSettings(remoteSettings);
+        } else {
+          // Initialize remote settings if none exist
+          await db.updateSettings(defaultSettings);
+        }
+      } catch (error) {
+        console.error('Failed to load settings from Firestore', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Apply theme
+    loadSettings();
+  }, []);
+
+  // Sync theme to document
+  useEffect(() => {
     if (settings.theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [settings]);
+  }, [settings.theme]);
 
-  const updateSettings = useCallback((newSettings: Partial<AdminSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+  const updateSettings = useCallback(async (newSettings: Partial<AdminSettings>) => {
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      // Fire and forget Firestore update
+      db.updateSettings(updated).catch(e => console.error("Firestore settings update failed", e));
+      return updated;
+    });
   }, []);
 
-  return { settings, updateSettings };
+  return { settings, updateSettings, loading };
 };

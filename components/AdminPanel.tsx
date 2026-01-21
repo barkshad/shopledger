@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSales } from '../hooks/useSales';
 import { useToast } from '../hooks/useToast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import SalesManagementTab from './admin/SalesManagementTab';
@@ -9,6 +8,7 @@ import ReportsTab from './admin/ReportsTab';
 import DataControlTab from './admin/DataControlTab';
 import SettingsTab from './admin/SettingsTab';
 import ActivityLog from './admin/ActivityLog';
+import Spinner from './Spinner';
 import {
   ShoppingCartIcon,
   BarChartIcon,
@@ -24,7 +24,7 @@ type AdminTab = 'sales' | 'expenses' | 'reports' | 'data' | 'settings';
 const MotionDiv = motion.div as any;
 
 const AdminPanel = () => {
-  const { settings } = useAdminSettings();
+  const { settings, loading: settingsLoading } = useAdminSettings();
   const { addToast } = useToast();
   const [secretKey, setSecretKey] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -52,6 +52,10 @@ const AdminPanel = () => {
     }
   };
 
+  if (settingsLoading) {
+    return <Spinner />;
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto mt-10">
@@ -76,7 +80,7 @@ const AdminPanel = () => {
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <button
               type="submit"
-              className="w-full bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors"
+              className="w-full bg-primary text-on-primary font-bold py-2 px-4 rounded-lg shadow-md hover:bg-zinc-800 transition-colors"
             >
               Unlock
             </button>

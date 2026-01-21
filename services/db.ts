@@ -11,10 +11,12 @@ import {
   query, 
   orderBy, 
   writeBatch,
+  getDoc,
+  setDoc,
   DocumentData,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
-import { Sale, Expense, Product, Customer } from '../types';
+import { Sale, Expense, Product, Customer, AdminSettings } from '../types';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA6Q7AJYVqBw7LPA9ahAs4CVxEG4QrOgnY",
@@ -34,11 +36,28 @@ const SALES_COLLECTION = 'sales';
 const EXPENSES_COLLECTION = 'expenses';
 const PRODUCTS_COLLECTION = 'products';
 const CUSTOMERS_COLLECTION = 'customers';
+const SETTINGS_COLLECTION = 'settings';
+const GLOBAL_SETTINGS_ID = 'app_config';
 
 const mapDoc = <T,>(doc: QueryDocumentSnapshot<DocumentData>): T => ({
   ...(doc.data() as T),
   id: doc.id,
 });
+
+// Settings Functions (Replacing LocalStorage)
+export const getSettings = async (): Promise<AdminSettings | null> => {
+  const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_ID);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data() as AdminSettings;
+  }
+  return null;
+};
+
+export const updateSettings = async (settings: AdminSettings): Promise<void> => {
+  const docRef = doc(db, SETTINGS_COLLECTION, GLOBAL_SETTINGS_ID);
+  return setDoc(docRef, settings, { merge: true });
+};
 
 // Sales Functions
 export const addSale = async (sale: Omit<Sale, 'id'>): Promise<string> => {
